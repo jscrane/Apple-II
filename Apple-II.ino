@@ -28,6 +28,9 @@ SoftSwitches switches;
 static void reset(bool) {
 
 	switches.on_access_text([](bool on) { textscreen.enable(on); });
+#if defined(PWM_SOUND)
+	switches.on_access_speaker([]() { digitalWrite(PWM_SOUND, !digitalRead(PWM_SOUND)); });
+#endif
 
 	textscreen.begin();
 }

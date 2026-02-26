@@ -5,6 +5,6 @@
 #define CHARS_PER_LINE	40
 #define SCREEN_LINES	24
 
-#define ORIENT		portrait
+#define ORIENT		reverse_landscape
 
 #define RAM_PAGES	14

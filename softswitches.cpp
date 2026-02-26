@@ -12,25 +12,41 @@ void SoftSwitches::operator=(uint8_t c) {
 
 SoftSwitches::operator uint8_t() {
 
-	DBG_EMU("SoftSwitches::operator uint8_t %04x", _acc);
-
 	switch (_acc) {
+	case SPEAKER:
+		if (speaker) {
+			speaker();
+			return 0;
+		}
+		break;
 	case DISPLAY_TEXT_OFF:
-		if (text_mode)
+		if (text_mode) {
 			text_mode(false);
+			return 0;
+		}
 		break;
 	case DISPLAY_TEXT_ON:
-		if (text_mode)
+		if (text_mode) {
 			text_mode(true);
+			return 0;
+		}
 		break;
 	case DISPLAY_LORES:
-		if (graphics_mode)
+		if (graphics_mode) {
 			graphics_mode(false);
+			return 0;
+		}
 		break;
 	case DISPLAY_HIRES:
-		if (graphics_mode)
+		if (graphics_mode) {
 			graphics_mode(true);
+			return 0;
+		}
 		break;
+	default:
+		//DBG_EMU("SoftSwitches::operator uint8_t unhandled: %04x", _acc);
+		return 0;
 	}
-	return 0x00;
+	DBG_EMU("SoftSwitches::operator uint8_t unregistered handler for: %04x", _acc);
+	return 0;
 }

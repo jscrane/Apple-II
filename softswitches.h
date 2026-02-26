@@ -11,6 +11,8 @@ public:
 	static const uint8_t KEYBOARD_DATA = 0x00;
 	static const uint8_t KEYBOARD_CLEAR_STROBE = 0x10;
 
+	static const uint8_t SPEAKER = 0x30;
+
 	static const uint8_t DISPLAY_TEXT_OFF = 0x50;	// i.e., Graphics on
 	static const uint8_t DISPLAY_TEXT_ON = 0x51;
 	static const uint8_t DISPLAY_FULL = 0x52;
@@ -20,9 +22,11 @@ public:
 	static const uint8_t DISPLAY_LORES = 0x56;
 	static const uint8_t DISPLAY_HIRES = 0x57;
 
+	void on_access_speaker(std::function<void(void)> f) { speaker = f; }
 	void on_access_text(std::function<void(bool)> f) { text_mode = f; }
 	void on_access_graphics(std::function<void(bool)> f) { graphics_mode = f; }
 
 private:
+	std::function<void(void)> speaker;
 	std::function<void(bool)> text_mode, graphics_mode;
 };
