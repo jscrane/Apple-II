@@ -1,0 +1,6 @@
+.build
+.*.swp
+*.cpp.o
+*.cpp.d
+*.txt.mk
+serialout.txt
