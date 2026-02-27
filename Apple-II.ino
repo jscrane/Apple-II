@@ -24,6 +24,8 @@ ram<> mainram[RAM_PAGES];
 
 #if defined(USE_HOST_KBD)
 hw_serial_kbd kbd(Serial);
+#elif defined(PS2_SERIAL_KBD)
+ps2_serial_kbd kbd;
 #else
 #error "No keyboard defined!"
 #endif

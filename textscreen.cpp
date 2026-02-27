@@ -1,3 +1,5 @@
+#include <stdint.h>
+
 #include <machine.h>
 #include <memory.h>
 #include <display.h>

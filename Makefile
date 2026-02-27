@@ -18,4 +18,15 @@ CPPFLAGS += -DUSER_SETUP_LOADED -DILI9341_DRIVER -DTFT_CS=PIN_D8 -DTFT_DC=PIN_D1
 LIBRARIES += TFT_eSPI SpiRAM LittleFS
 endif
 
+ifeq ($t, esp32)
+LIBRARIES += FS SPIFFS Network
+
+ifeq ($b, lilygo)
+BOARD := ttgo-t7-v14-mini32
+SERIAL_PORT := /dev/ttyACM0
+CPPFLAGS += -DUSE_SD -DPS2_SERIAL_KBD=\"UK\"
+LIBRARIES += ESP32Lib SD
+endif
+endif
+
 -include $t.mk
