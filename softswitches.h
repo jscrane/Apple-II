@@ -25,8 +25,11 @@ public:
 	void on_access_speaker(std::function<void(void)> f) { speaker = f; }
 	void on_access_text(std::function<void(bool)> f) { text_mode = f; }
 	void on_access_graphics(std::function<void(bool)> f) { graphics_mode = f; }
+	void on_read_keyboard(std::function<uint8_t(void)> f) { read_keyboard = f; }
+	void on_strobe_keyboard(std::function<void(void)> f) { strobe_keyboard = f; }
 
 private:
-	std::function<void(void)> speaker;
+	std::function<uint8_t(void)> read_keyboard;
+	std::function<void(void)> speaker, strobe_keyboard;
 	std::function<void(bool)> text_mode, graphics_mode;
 };

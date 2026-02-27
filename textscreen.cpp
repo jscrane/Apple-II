@@ -49,22 +49,5 @@ void TextScreen::_set(Memory::address a, uint8_t c) {
 					_display.drawPixel(xc + CHAR_WIDTH - i, yc + j, colour);
 				}
 		}
-
-		/*
-		// bit-7 is used for video effects
-		// 0x00-0x3f: black text on white background
-		// 0x40-0x7f: flashing
-		// 0x80-0xff: normal: white text on black background
-
-		DBG_EMU("setCursor: %d, %d", col, row);
-		_display.setCursor(col * CHAR_WIDTH, row * CHAR_HEIGHT);
-
-		char asc = (c & 0x3f);
-		if (c < 0x20)
-			asc = c | 0x40;
-
-		DBG_EMU("print: %02x '%c'", asc, asc);
-		_display.print(asc);
-		*/
 	}
 }

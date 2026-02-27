@@ -13,6 +13,17 @@ void SoftSwitches::operator=(uint8_t c) {
 SoftSwitches::operator uint8_t() {
 
 	switch (_acc) {
+	case KEYBOARD_DATA:
+		if (read_keyboard)
+			return read_keyboard();
+		break;
+	case KEYBOARD_CLEAR_STROBE:
+		if (strobe_keyboard) {
+			DBG_EMU("strobe");
+			strobe_keyboard();
+			return 0;
+		}
+		break;
 	case SPEAKER:
 		if (speaker) {
 			speaker();
