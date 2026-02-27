@@ -34,13 +34,30 @@ void TextScreen::_set(Memory::address a, uint8_t c) {
 		uint8_t l = (_acc / 128);		// "line group"
 		uint8_t row = 8*t + l;
 
-		DBG_EMU("setCursor: %d, %d", col, row);
-		_display.setCursor(col * CHAR_WIDTH, row * CHAR_HEIGHT);
+		uint16_t cc = CHAR_HEIGHT * c, cm = CHAR_HEIGHT * oc;
+		uint16_t xc = col * CHAR_WIDTH, yc = row * CHAR_HEIGHT;
+		for (uint16_t j = 0; j < CHAR_HEIGHT; j++) {
+			uint8_t b = pgm_read_byte(&charset[cc + j]);
+			uint8_t m = pgm_read_byte(&charset[cm + j]);
+			if (b == m)
+				continue;
 
+			uint8_t d = (b ^ m);
+			for (uint16_t i = 1, bit = 1; i <= CHAR_WIDTH; i++, bit <<= 1)
+				if (d & bit) {
+					uint16_t colour = (b & bit)? _display.fg(): _display.bg();
+					_display.drawPixel(xc + CHAR_WIDTH - i, yc + j, colour);
+				}
+		}
+
+		/*
 		// bit-7 is used for video effects
 		// 0x00-0x3f: black text on white background
 		// 0x40-0x7f: flashing
 		// 0x80-0xff: normal: white text on black background
+
+		DBG_EMU("setCursor: %d, %d", col, row);
+		_display.setCursor(col * CHAR_WIDTH, row * CHAR_HEIGHT);
 
 		char asc = (c & 0x3f);
 		if (c < 0x20)
@@ -48,5 +65,6 @@ void TextScreen::_set(Memory::address a, uint8_t c) {
 
 		DBG_EMU("print: %02x '%c'", asc, asc);
 		_display.print(asc);
+		*/
 	}
 }
