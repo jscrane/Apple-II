@@ -9,6 +9,7 @@
 #include "config.h"
 #include "textscreen.h"
 #include "softswitches.h"
+#include "keyboard.h"
 
 Memory memory;
 r6502 cpu(memory);
@@ -21,31 +22,23 @@ prom basic3(integer_basic3, sizeof(integer_basic3));
 ram<> lowram;
 ram<> mainram[RAM_PAGES];
 
-Display display;
-TextScreen textscreen(display);
-SoftSwitches switches;
-
 #if defined(USE_HOST_KBD)
-hw_serial_kbd keyboard(Serial);
-static uint8_t lastc;
+hw_serial_kbd kbd(Serial);
 #else
 #error "No keyboard defined!"
 #endif
+
+Display display;
+TextScreen textscreen(display);
+SoftSwitches switches;
+Keyboard keyboard(kbd);
 
 static void reset(bool) {
 
 	keyboard.reset();
 
-	switches.on_read_keyboard([]() {
-		if (keyboard.available()) {
-			uint8_t c = (keyboard.read() & 0x5f) | 0x80;
-			DBG_EMU("read: %02x", c);
-			lastc = c;
-			return c;
-		}
-		return lastc;
-	});
-	switches.on_strobe_keyboard([]() { lastc &= 0x7f; });
+	switches.on_read_keyboard([]() { return keyboard.read(); });
+	switches.on_strobe_keyboard([]() { keyboard.strobe(); });
 
 	switches.on_access_text([](bool on) { textscreen.enable(on); });
 #if defined(PWM_SOUND)

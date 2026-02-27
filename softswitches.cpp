@@ -19,7 +19,6 @@ SoftSwitches::operator uint8_t() {
 		break;
 	case KEYBOARD_CLEAR_STROBE:
 		if (strobe_keyboard) {
-			DBG_EMU("strobe");
 			strobe_keyboard();
 			return 0;
 		}
