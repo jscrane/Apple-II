@@ -21,12 +21,12 @@ void TextScreen::begin() {
 
 void TextScreen::_set(Memory::address a, uint8_t c) {
 
-	uint8_t oc = _mem[_acc];
-	_mem[_acc] = c;
+	uint8_t oc = _mem[a];
+	_mem[a] = c;
 
 	if (_on && oc != c) {
 
-		uint8_t x = (_acc % 128);
+		uint8_t x = (a % 128);
 		if (x >= 120)	// "screen hole"?
 			return;
 
@@ -38,18 +38,26 @@ void TextScreen::_set(Memory::address a, uint8_t c) {
 
 		uint16_t cc = CHAR_HEIGHT * c, cm = CHAR_HEIGHT * oc;
 		uint16_t xc = col * CHAR_WIDTH, yc = row * CHAR_HEIGHT;
+		uint16_t fg = _display.fg(), bg = _display.bg();
+		bool invc = (c < 0x40), invoc = (oc < 0x40);
+		if (invc) {
+			uint16_t t = fg;
+			fg = bg;
+			bg = t;
+		}
 		for (uint16_t j = 0; j < CHAR_HEIGHT; j++) {
 			uint8_t b = pgm_read_byte(&charset[cc + j]);
 			uint8_t m = pgm_read_byte(&charset[cm + j]);
-			if (b == m)
+			if (b == m && invc == invoc)
 				continue;
+
+			if (invc != invoc)
+				m = ~b;
 
 			uint8_t d = (b ^ m);
 			for (uint16_t i = 1, bit = 1; i <= CHAR_WIDTH; i++, bit <<= 1)
-				if (d & bit) {
-					uint16_t colour = (b & bit)? _display.fg(): _display.bg();
-					_display.drawPixel(xc + CHAR_WIDTH - i, yc + j, colour);
-				}
+				if (d & bit)
+					_display.drawPixel(xc + CHAR_WIDTH - i, yc + j, (b & bit)? fg: bg);
 		}
 	}
 }
