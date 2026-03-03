@@ -45,7 +45,7 @@ void TextScreen::_set(Memory::address a, uint8_t c) {
 			fg = bg;
 			bg = t;
 		}
-		for (uint16_t j = 0; j < CHAR_HEIGHT; j++) {
+		for (uint8_t j = 0; j < CHAR_HEIGHT; j++) {
 			uint8_t b = pgm_read_byte(&charset[cc + j]);
 			uint8_t m = pgm_read_byte(&charset[cm + j]);
 			if (b == m && invc == invoc)
@@ -55,7 +55,7 @@ void TextScreen::_set(Memory::address a, uint8_t c) {
 				m = ~b;
 
 			uint8_t d = (b ^ m);
-			for (uint16_t i = 1, bit = 1; i <= CHAR_WIDTH; i++, bit <<= 1)
+			for (uint8_t i = 0, bit = 1; i < CHAR_WIDTH; i++, bit <<= 1)
 				if (d & bit)
 					_display.drawPixel(xc + CHAR_WIDTH - i, yc + j, (b & bit)? fg: bg);
 		}

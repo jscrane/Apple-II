@@ -2,7 +2,6 @@
 
 class SoftSwitches: public Memory::Device {
 public:
-	SoftSwitches(): Memory::Device(256) {}
 	void begin();
 
 	virtual void operator= (uint8_t c);
