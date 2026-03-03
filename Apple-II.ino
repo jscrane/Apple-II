@@ -50,6 +50,17 @@ static void reset(bool) {
 	textscreen.begin();
 }
 
+static void function_key(uint8_t fn) {
+	switch (fn) {
+	case 1:
+		machine.reset();
+		break;
+	case 10:
+		machine.debug_cpu();
+		break;
+	}
+}
+
 void setup() {
 
 	machine.begin();
@@ -65,6 +76,7 @@ void setup() {
 	memory.put(basic3, 0xf000);
 	memory.put(monitor, 0xf800);
 
+	kbd.register_fnkey_handler(function_key);
 	machine.register_reset_handler(reset);
 	machine.reset();
 }
