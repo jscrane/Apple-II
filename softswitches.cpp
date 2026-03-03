@@ -29,34 +29,38 @@ SoftSwitches::operator uint8_t() {
 			return 0;
 		}
 		break;
-	case DISPLAY_TEXT_OFF:
-		if (text_mode) {
-			text_mode(false);
+	case DISPLAY_GRAPHICS:
+	case DISPLAY_TEXT:
+		if (graphics_text) {
+			graphics_text(_acc & 1);
 			return 0;
 		}
 		break;
-	case DISPLAY_TEXT_ON:
-		if (text_mode) {
-			text_mode(true);
+	case DISPLAY_FULL:
+	case DISPLAY_MIXED:
+		if (full_mixed) {
+			full_mixed(_acc & 1);
+			return 0;
+		}
+		break;
+	case DISPLAY_PAGE1:
+	case DISPLAY_PAGE2:
+		if (page1_page2) {
+			page1_page2(_acc & 1);
 			return 0;
 		}
 		break;
 	case DISPLAY_LORES:
-		if (graphics_mode) {
-			graphics_mode(false);
-			return 0;
-		}
-		break;
 	case DISPLAY_HIRES:
-		if (graphics_mode) {
-			graphics_mode(true);
+		if (lores_hires) {
+			lores_hires(_acc & 1);
 			return 0;
 		}
 		break;
 	default:
-		//DBG_EMU("SoftSwitches::operator uint8_t unhandled: %04x", _acc);
+		DBG_EMU("SoftSwitches::operator uint8_t unhandled: %02x", _acc);
 		return 0;
 	}
-	DBG_EMU("SoftSwitches::operator uint8_t unregistered handler for: %04x", _acc);
+	DBG_EMU("SoftSwitches::operator uint8_t unregistered handler for: %02x", _acc);
 	return 0;
 }

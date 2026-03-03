@@ -42,10 +42,10 @@ static void reset(bool) {
 	switches.on_read_keyboard([]() { return keyboard.read(); });
 	switches.on_strobe_keyboard([]() { keyboard.strobe(); });
 
-	switches.on_access_text([](bool on) { textscreen.enable(on); });
-#if defined(PWM_SOUND)
+	switches.on_access_page1_page2([](bool page2) { /* FIXME */ });
+	switches.on_access_graphics_text([](bool text) { textscreen.enable(text); });
+
 	switches.on_access_speaker([]() { digitalWrite(PWM_SOUND, !digitalRead(PWM_SOUND)); });
-#endif
 
 	textscreen.begin();
 }
