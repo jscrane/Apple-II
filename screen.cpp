@@ -17,14 +17,13 @@ bool Screen::map_address(Memory::address a, uint8_t &row, uint8_t &col) {
 
 	col = (x % CHARS_PER_LINE);
 	uint8_t t = (x / CHARS_PER_LINE);	// "third"
-	uint8_t l = (_acc / 128);		// "line group"
+	uint8_t l = (a / 128);			// "line group"
 	row = 8*t + l;
 	return true;
 }
 
 void Screen::redraw() {
 
-	_display.clear();
 	for (uint16_t addr = 0; addr < N; addr++) {
 		uint8_t c = _ram->get(addr);
 		_ram->set(addr, 0);

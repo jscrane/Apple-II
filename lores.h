@@ -2,8 +2,10 @@
 
 class LoRes: public Screen {
 public:
-	LoRes(Display &display): Screen(display) {}
+	LoRes(Display &display): _display(display) {}
 
-protected:
 	void draw(Memory::address a, uint8_t c);
+
+private:
+	Display &_display;
 };

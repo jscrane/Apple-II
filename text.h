@@ -2,9 +2,10 @@
 
 class Text: public Screen {
 public:
-	Text(Display &display): Screen(display) {}
-	void begin();
+	Text(Display &display): _display(display) {}
 
-protected:
 	void draw(Memory::address a, uint8_t c);
+
+private:
+	Display &_display;
 };

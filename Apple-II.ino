@@ -10,6 +10,7 @@
 #include "screen.h"
 #include "text.h"
 #include "lores.h"
+#include "mixed.h"
 #include "softswitches.h"
 #include "keyboard.h"
 
@@ -34,8 +35,21 @@ ps2_serial_kbd kbd;
 Display display;
 Text text(display);
 LoRes lores(display);
+Mixed mixed(text, lores);
 SoftSwitches switches;
 Keyboard keyboard(kbd);
+
+static Screen& get_active_screen() {
+	if (switches.is_text()) return text;
+	if (switches.is_mixed()) return mixed;
+	return lores;
+}
+
+static void set_screen() {
+	Screen &screen = get_active_screen();
+	memory.put(screen, switches.is_page2()? 0x0800: 0x0400);
+	screen.redraw();
+}
 
 static void reset(bool) {
 
@@ -44,26 +58,27 @@ static void reset(bool) {
 	switches.on_read_keyboard([]() { return keyboard.read(); });
 	switches.on_strobe_keyboard([]() { keyboard.strobe(); });
 
-	switches.on_access_page([](bool is_page2) {
-		if (is_page2) {
+	switches.on_access_page([](bool show_page2) {
+		if (show_page2) {
 			memory.put(pages[1], 0x0400);
-			text.display(pages[2]);
-			lores.display(pages[2]);
+			text.show(pages[2]);
+			lores.show(pages[2]);
+			mixed.show(pages[2]);
 		} else {
-			text.display(pages[1]);
-			lores.display(pages[1]);
+			text.show(pages[1]);
+			lores.show(pages[1]);
+			mixed.show(pages[1]);
 			memory.put(pages[2], 0x0800);
 		}
 	});
-	switches.on_access_graphics_text([](bool is_text) {
-		Screen &screen = is_text? static_cast<Screen&>(text): static_cast<Screen&>(lores);
-		memory.put(screen, switches.is_page2()? 0x0800: 0x0400);
-		screen.redraw();
-	});
+	switches.on_access_graphics_text([](bool) { set_screen(); });
+	switches.on_access_full_mixed([](bool) { set_screen(); });
 
 	switches.on_access_speaker([]() { digitalWrite(PWM_SOUND, !digitalRead(PWM_SOUND)); });
 
-	text.begin();
+	display.begin(BG_COLOUR, FG_COLOUR, ORIENT);
+	display.setScreen(CHAR_WIDTH * CHARS_PER_LINE, CHAR_HEIGHT * SCREEN_LINES);
+	display.clear();
 }
 
 static void function_key(uint8_t fn) {

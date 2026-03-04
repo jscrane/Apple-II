@@ -3,7 +3,6 @@
 #include <machine.h>
 #include <memory.h>
 #include <display.h>
-#include <debugging.h>
 #include <ram.h>
 
 #include "screen.h"

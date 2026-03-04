@@ -11,16 +11,6 @@
 #include "text.h"
 #include "charset.h"
 
-#define CHAR_WIDTH	7
-#define CHAR_HEIGHT	8
-
-void Text::begin() {
-
-	_display.begin(BG_COLOUR, FG_COLOUR, ORIENT);
-	_display.setScreen(CHAR_WIDTH * CHARS_PER_LINE, CHAR_HEIGHT * SCREEN_LINES);
-	_display.clear();
-}
-
 void Text::draw(Memory::address a, uint8_t c) {
 
 	uint8_t row, col;
