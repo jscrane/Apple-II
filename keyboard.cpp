@@ -13,6 +13,9 @@ uint8_t Keyboard::read() {
 
 	if (c >= 'a' && c <= 'z')
 		c &= 0x5f;
+	else if (c == '\b')
+		c = 0x08;
+
 	c |= 0x80;
 	_lastc = c;
 	DBG_EMU("read: %02x", c);
