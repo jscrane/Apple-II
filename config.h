@@ -7,4 +7,4 @@
 
 #define ORIENT		reverse_landscape
 
-#define RAM_PAGES	14
+#define RAM_PAGES	16
