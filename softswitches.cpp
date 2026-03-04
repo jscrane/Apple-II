@@ -48,16 +48,16 @@ SoftSwitches::operator uint8_t() {
 	case DISPLAY_PAGE1:
 	case DISPLAY_PAGE2:
 		page2 = (_acc & 1);
-		if (page1_page2) {
-			page1_page2(page2);
+		if (page) {
+			page(page2);
 			return 0;
 		}
 		break;
 	case DISPLAY_LORES:
 	case DISPLAY_HIRES:
 		hires = (_acc & 1);
-		if (lores_hires) {
-			lores_hires(hires);
+		if (res) {
+			res(hires);
 			return 0;
 		}
 		break;

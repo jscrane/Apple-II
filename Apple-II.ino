@@ -19,8 +19,7 @@ prom monitor(original_monitor, sizeof(original_monitor));
 prom basic1(integer_basic1, sizeof(integer_basic1));
 prom basic2(integer_basic2, sizeof(integer_basic2));
 prom basic3(integer_basic3, sizeof(integer_basic3));
-ram<> lowram;
-ram<> mainram[RAM_PAGES];
+ram<> pages[RAM_PAGES];
 
 #if defined(USE_HOST_KBD)
 hw_serial_kbd kbd(Serial);
@@ -42,8 +41,20 @@ static void reset(bool) {
 	switches.on_read_keyboard([]() { return keyboard.read(); });
 	switches.on_strobe_keyboard([]() { keyboard.strobe(); });
 
-	switches.on_access_page1_page2([](bool page2) { /* FIXME */ });
-	switches.on_access_graphics_text([](bool text) { textscreen.enable(text); });
+	switches.on_access_page([](bool page2) {
+		if (page2) {
+			memory.put(pages[1], 0x0400);
+			textscreen.display(pages[2]);
+		} else {
+			textscreen.display(pages[1]);
+			memory.put(pages[2], 0x0800);
+		}
+	});
+	switches.on_access_graphics_text([](bool text) {
+		Memory::address pageaddr = switches.is_page2()? 0x0800: 0x0400;
+		if (text)
+			memory.put(textscreen, pageaddr);
+	});
 
 	switches.on_access_speaker([]() { digitalWrite(PWM_SOUND, !digitalRead(PWM_SOUND)); });
 
@@ -65,10 +76,8 @@ void setup() {
 
 	machine.begin();
 
-	memory.put(lowram, 0x0000);
-	memory.put(textscreen, 0x0400);
 	for (int i = 0; i < RAM_PAGES; i++)
-		memory.put(mainram[i], 0x0800 + 0x0400*i);
+		memory.put(pages[i], 0x0400*i);
 
 	memory.put(switches, 0xc000);
 	memory.put(basic1, 0xe000);

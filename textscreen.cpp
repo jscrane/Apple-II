@@ -4,6 +4,7 @@
 #include <memory.h>
 #include <display.h>
 #include <debugging.h>
+#include <ram.h>
 
 #include "config.h"
 #include "textscreen.h"
@@ -21,10 +22,10 @@ void TextScreen::begin() {
 
 void TextScreen::_set(Memory::address a, uint8_t c) {
 
-	uint8_t oc = _mem[a];
-	_mem[a] = c;
+	uint8_t oc = _ram->get(a);
+	_ram->set(a, c);
 
-	if (_on && oc != c) {
+	if (oc != c) {
 
 		uint8_t x = (a % 128);
 		if (x >= 120)	// "screen hole"?
