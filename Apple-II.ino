@@ -7,7 +7,9 @@
 #include "integer_basic2.h"
 #include "integer_basic3.h"
 #include "config.h"
-#include "textscreen.h"
+#include "screen.h"
+#include "text.h"
+#include "lores.h"
 #include "softswitches.h"
 #include "keyboard.h"
 
@@ -30,7 +32,8 @@ ps2_serial_kbd kbd;
 #endif
 
 Display display;
-TextScreen textscreen(display);
+Text text(display);
+LoRes lores(display);
 SoftSwitches switches;
 Keyboard keyboard(kbd);
 
@@ -41,24 +44,26 @@ static void reset(bool) {
 	switches.on_read_keyboard([]() { return keyboard.read(); });
 	switches.on_strobe_keyboard([]() { keyboard.strobe(); });
 
-	switches.on_access_page([](bool page2) {
-		if (page2) {
+	switches.on_access_page([](bool is_page2) {
+		if (is_page2) {
 			memory.put(pages[1], 0x0400);
-			textscreen.display(pages[2]);
+			text.display(pages[2]);
+			lores.display(pages[2]);
 		} else {
-			textscreen.display(pages[1]);
+			text.display(pages[1]);
+			lores.display(pages[1]);
 			memory.put(pages[2], 0x0800);
 		}
 	});
-	switches.on_access_graphics_text([](bool text) {
-		Memory::address pageaddr = switches.is_page2()? 0x0800: 0x0400;
-		if (text)
-			memory.put(textscreen, pageaddr);
+	switches.on_access_graphics_text([](bool is_text) {
+		Screen &screen = is_text? static_cast<Screen&>(text): static_cast<Screen&>(lores);
+		memory.put(screen, switches.is_page2()? 0x0800: 0x0400);
+		screen.redraw();
 	});
 
 	switches.on_access_speaker([]() { digitalWrite(PWM_SOUND, !digitalRead(PWM_SOUND)); });
 
-	textscreen.begin();
+	text.begin();
 }
 
 static void function_key(uint8_t fn) {
