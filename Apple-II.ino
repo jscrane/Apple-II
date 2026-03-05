@@ -7,7 +7,10 @@
 #include "integer_basic2.h"
 #include "integer_basic3.h"
 #include "config.h"
-#include "textscreen.h"
+#include "screen.h"
+#include "text.h"
+#include "lores.h"
+#include "mixed.h"
 #include "softswitches.h"
 #include "keyboard.h"
 
@@ -19,8 +22,7 @@ prom monitor(original_monitor, sizeof(original_monitor));
 prom basic1(integer_basic1, sizeof(integer_basic1));
 prom basic2(integer_basic2, sizeof(integer_basic2));
 prom basic3(integer_basic3, sizeof(integer_basic3));
-ram<> lowram;
-ram<> mainram[RAM_PAGES];
+ram<> pages[RAM_PAGES];
 
 #if defined(USE_HOST_KBD)
 hw_serial_kbd kbd(Serial);
@@ -31,9 +33,23 @@ ps2_serial_kbd kbd;
 #endif
 
 Display display;
-TextScreen textscreen(display);
+Text text(display);
+LoRes lores(display);
+Mixed mixed(text, lores);
 SoftSwitches switches;
 Keyboard keyboard(kbd);
+
+static Screen& get_active_screen() {
+	if (switches.is_text()) return text;
+	if (switches.is_mixed()) return mixed;
+	return lores;
+}
+
+static void set_screen() {
+	Screen &screen = get_active_screen();
+	memory.put(screen, switches.is_page2()? 0x0800: 0x0400);
+	screen.redraw();
+}
 
 static void reset(bool) {
 
@@ -42,12 +58,27 @@ static void reset(bool) {
 	switches.on_read_keyboard([]() { return keyboard.read(); });
 	switches.on_strobe_keyboard([]() { keyboard.strobe(); });
 
-	switches.on_access_page1_page2([](bool page2) { /* FIXME */ });
-	switches.on_access_graphics_text([](bool text) { textscreen.enable(text); });
+	switches.on_access_page([](bool show_page2) {
+		if (show_page2) {
+			memory.put(pages[1], 0x0400);
+			text.show(pages[2]);
+			lores.show(pages[2]);
+			mixed.show(pages[2]);
+		} else {
+			text.show(pages[1]);
+			lores.show(pages[1]);
+			mixed.show(pages[1]);
+			memory.put(pages[2], 0x0800);
+		}
+	});
+	switches.on_access_graphics_text([](bool) { set_screen(); });
+	switches.on_access_full_mixed([](bool) { set_screen(); });
 
 	switches.on_access_speaker([]() { digitalWrite(PWM_SOUND, !digitalRead(PWM_SOUND)); });
 
-	textscreen.begin();
+	display.begin(BG_COLOUR, FG_COLOUR, ORIENT);
+	display.setScreen(CHAR_WIDTH * CHARS_PER_LINE, CHAR_HEIGHT * SCREEN_LINES);
+	display.clear();
 }
 
 static void function_key(uint8_t fn) {
@@ -65,10 +96,14 @@ void setup() {
 
 	machine.begin();
 
-	memory.put(lowram, 0x0000);
-	memory.put(textscreen, 0x0400);
-	for (int i = 0; i < RAM_PAGES; i++)
-		memory.put(mainram[i], 0x0800 + 0x0400*i);
+	DBG_INI("RAM:    %dkB at 0x0000", RAM_PAGES);
+	for (unsigned i = 0; i < RAM_PAGES; i++)
+		memory.put(pages[i], 0x0400*i);
+
+#if defined(USE_SPIRAM)
+	DBG_INI("SpiRAM: %dkB at 0x%04x", SPIRAM_EXTENT * Memory::page_size / 1024, SPIRAM_BASE);
+	memory.put(sram, SPIRAM_BASE, SPIRAM_EXTENT);
+#endif
 
 	memory.put(switches, 0xc000);
 	memory.put(basic1, 0xe000);
