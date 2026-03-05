@@ -2,11 +2,14 @@
 #include <r6502.h>
 #include <display.h>
 
-#include "original_monitor.h"
-#include "integer_basic1.h"
-#include "integer_basic2.h"
-#include "integer_basic3.h"
 #include "config.h"
+#if defined(APPLE_II)
+#include "firmware/original_monitor.h"
+#include "firmware/integer_basic1.h"
+#include "firmware/integer_basic2.h"
+#include "firmware/integer_basic3.h"
+#elif defined(APPLE_II_PLUS)
+#endif
 #include "screen.h"
 #include "text.h"
 #include "lores.h"
