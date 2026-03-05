@@ -2,10 +2,6 @@
 #include <r6502.h>
 #include <display.h>
 
-#include "original_monitor.h"
-#include "integer_basic1.h"
-#include "integer_basic2.h"
-#include "integer_basic3.h"
 #include "config.h"
 #include "screen.h"
 #include "text.h"
@@ -17,13 +13,32 @@
 Memory memory;
 r6502 cpu(memory);
 Arduino machine(cpu);
+ram<> pages[RAM_PAGES];
+flash_filer files(PROGRAMS);
 
+#if defined(APPLE_II)
+#include "firmware/original_monitor.h"
+#include "firmware/integer_basic1.h"
+#include "firmware/integer_basic2.h"
+#include "firmware/integer_basic3.h"
 prom monitor(original_monitor, sizeof(original_monitor));
 prom basic1(integer_basic1, sizeof(integer_basic1));
 prom basic2(integer_basic2, sizeof(integer_basic2));
 prom basic3(integer_basic3, sizeof(integer_basic3));
-ram<> pages[RAM_PAGES];
-flash_filer files(PROGRAMS);
+#elif defined(APPLE_II_PLUS)
+#include "firmware/autostart_monitor.h"
+#include "firmware/applesoft_basic1.h"
+#include "firmware/applesoft_basic2.h"
+#include "firmware/applesoft_basic3.h"
+#include "firmware/applesoft_basic4.h"
+#include "firmware/applesoft_basic5.h"
+prom monitor(autostart_monitor, sizeof(autostart_monitor));
+prom basic1(applesoft_basic1, sizeof(applesoft_basic1));
+prom basic2(applesoft_basic2, sizeof(applesoft_basic2));
+prom basic3(applesoft_basic3, sizeof(applesoft_basic3));
+prom basic4(applesoft_basic4, sizeof(applesoft_basic4));
+prom basic5(applesoft_basic5, sizeof(applesoft_basic5));
+#endif
 
 #if defined(USE_HOST_KBD)
 hw_serial_kbd kbd(Serial);
@@ -77,10 +92,6 @@ static void reset(bool sd) {
 
 	switches.on_access_speaker([]() { digitalWrite(PWM_SOUND, !digitalRead(PWM_SOUND)); });
 
-	display.begin(BG_COLOUR, FG_COLOUR, ORIENT);
-	display.setScreen(CHAR_WIDTH * CHARS_PER_LINE, CHAR_HEIGHT * SCREEN_LINES);
-	display.clear();
-
 	if (!sd) {
 		DBG_EMU("No SD Card");
 		display.status("No SD Card");
@@ -88,7 +99,9 @@ static void reset(bool sd) {
 		DBG_EMU("Failed to open " PROGRAMS);
 		display.status("Failed to open " PROGRAMS);
 	} else {
+#if defined(APPLE_II)
 		display.status("Ctrl-B: BASIC");
+#endif
 	}
 }
 
@@ -127,6 +140,10 @@ void setup() {
 
 	machine.begin();
 
+	display.begin(BG_COLOUR, FG_COLOUR, ORIENT);
+	display.setScreen(CHAR_WIDTH * CHARS_PER_LINE, CHAR_HEIGHT * SCREEN_LINES);
+	display.clear();
+
 	DBG_INI("RAM:    %dkB at 0x0000", RAM_PAGES);
 	for (unsigned i = 0; i < RAM_PAGES; i++)
 		memory.put(pages[i], i * ram<>::page_size);
@@ -137,10 +154,19 @@ void setup() {
 #endif
 
 	memory.put(switches, 0xc000);
+	memory.put(monitor, 0xf800);
+
+#if defined(APPLE_II)
 	memory.put(basic1, 0xe000);
 	memory.put(basic2, 0xe800);
 	memory.put(basic3, 0xf000);
-	memory.put(monitor, 0xf800);
+#elif defined(APPLE_II_PLUS)
+	memory.put(basic1, 0xd000);
+	memory.put(basic2, 0xd800);
+	memory.put(basic3, 0xe000);
+	memory.put(basic4, 0xe800);
+	memory.put(basic5, 0xf000);
+#endif
 
 	kbd.register_fnkey_handler(function_key);
 	machine.register_reset_handler(reset);
