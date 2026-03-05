@@ -3,7 +3,17 @@
 #define BG_COLOUR	BLACK
 #define FG_COLOUR	WHITE
 
+#if defined(USE_ESPI)
 #define ORIENT		reverse_landscape
+#else
+#define ORIENT		portrait
+#endif
+
+#if defined(USE_SD)
+#define PROGRAMS	"/apple2/"
+#else
+#define PROGRAMS	"/"
+#endif
 
 #define RAM_TOP         0xc000u
 #if (RAM_SIZE >= RAM_TOP)
