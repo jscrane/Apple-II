@@ -12,7 +12,7 @@
 #include "lores.h"
 #include "mixed.h"
 #include "softswitches.h"
-#include "keyboard.h"
+#include "input.h"
 
 Memory memory;
 r6502 cpu(memory);
@@ -38,7 +38,7 @@ Text text(display);
 LoRes lores(display);
 Mixed mixed(text, lores);
 SoftSwitches switches;
-Keyboard keyboard(kbd);
+Input input(kbd, files);
 
 static Screen& get_active_screen() {
 	if (switches.is_text()) return text;
@@ -54,10 +54,10 @@ static void set_screen() {
 
 static void reset(bool sd) {
 
-	keyboard.reset();
+	input.reset();
 
-	switches.on_read_keyboard([]() { return keyboard.read(); });
-	switches.on_strobe_keyboard([]() { keyboard.strobe(); });
+	switches.on_read_keyboard([]() { return input.read(); });
+	switches.on_strobe_keyboard([]() { input.strobe(); });
 
 	switches.on_access_page([](bool show_page2) {
 		if (show_page2) {
@@ -113,6 +113,9 @@ static void function_key(uint8_t fn) {
 		break;
 	case 3:
 		filename = open(files.rewind());
+		break;
+	case 5:
+		input.load();
 		break;
 	case 10:
 		machine.debug_cpu();
