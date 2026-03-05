@@ -1,5 +1,10 @@
 #pragma once
 
+#define CHARS_PER_LINE	40
+#define SCREEN_LINES	24
+#define CHAR_WIDTH	7
+#define CHAR_HEIGHT	8
+
 class Screen: public Memory::Device {
 public:
 	static const unsigned N = 1024;

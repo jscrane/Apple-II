@@ -6,7 +6,6 @@
 #include <debugging.h>
 #include <ram.h>
 
-#include "config.h"
 #include "screen.h"
 #include "text.h"
 #include "charset.h"

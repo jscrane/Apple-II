@@ -17,7 +17,7 @@ void LoRes::draw(Memory::address a, uint8_t b) {
 
 	uint8_t row, col;
 	if (map_address(a, row, col)) {
-		_display.fillRect(7*col+1, 8*row, 7, 4, colours[b & 0x0f]);
-		_display.fillRect(7*col+1, 8*row+4, 7, 4, colours[b >> 4]);
+		_display.fillRect(CHAR_WIDTH*col+1, CHAR_HEIGHT*row, CHAR_WIDTH, CHAR_HEIGHT / 2, colours[b & 0x0f]);
+		_display.fillRect(CHAR_WIDTH*col+1, CHAR_HEIGHT*row+4, CHAR_WIDTH, CHAR_HEIGHT / 2, colours[b >> 4]);
 	}
 }

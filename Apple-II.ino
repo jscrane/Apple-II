@@ -97,7 +97,7 @@ void setup() {
 	machine.begin();
 
 	DBG_INI("RAM:    %dkB at 0x0000", RAM_PAGES);
-	for (int i = 0; i < RAM_PAGES; i++)
+	for (unsigned i = 0; i < RAM_PAGES; i++)
 		memory.put(pages[i], 0x0400*i);
 
 #if defined(USE_SPIRAM)
