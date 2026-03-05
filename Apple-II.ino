@@ -23,6 +23,7 @@ prom basic1(integer_basic1, sizeof(integer_basic1));
 prom basic2(integer_basic2, sizeof(integer_basic2));
 prom basic3(integer_basic3, sizeof(integer_basic3));
 ram<> pages[RAM_PAGES];
+flash_filer files(PROGRAMS);
 
 #if defined(USE_HOST_KBD)
 hw_serial_kbd kbd(Serial);
@@ -51,7 +52,7 @@ static void set_screen() {
 	screen.redraw();
 }
 
-static void reset(bool) {
+static void reset(bool sd) {
 
 	keyboard.reset();
 
@@ -79,12 +80,39 @@ static void reset(bool) {
 	display.begin(BG_COLOUR, FG_COLOUR, ORIENT);
 	display.setScreen(CHAR_WIDTH * CHARS_PER_LINE, CHAR_HEIGHT * SCREEN_LINES);
 	display.clear();
+
+	if (!sd) {
+		DBG_EMU("No SD Card");
+		display.status("No SD Card");
+	} else if (!files.start()) {
+		DBG_EMU("Failed to open " PROGRAMS);
+		display.status("Failed to open " PROGRAMS);
+	} else {
+		display.status("Ctrl-B: BASIC");
+	}
+}
+
+static const char *open(const char *filename) {
+	if (filename) {
+		display.status(filename);
+		return filename;
+	}
+	display.status("No file");
+	return 0;
 }
 
 static void function_key(uint8_t fn) {
+	static const char *filename;
+
 	switch (fn) {
 	case 1:
 		machine.reset();
+		break;
+	case 2:
+		filename = open(files.advance());
+		break;
+	case 3:
+		filename = open(files.rewind());
 		break;
 	case 10:
 		machine.debug_cpu();
@@ -98,7 +126,7 @@ void setup() {
 
 	DBG_INI("RAM:    %dkB at 0x0000", RAM_PAGES);
 	for (unsigned i = 0; i < RAM_PAGES; i++)
-		memory.put(pages[i], 0x0400*i);
+		memory.put(pages[i], i * ram<>::page_size);
 
 #if defined(USE_SPIRAM)
 	DBG_INI("SpiRAM: %dkB at 0x%04x", SPIRAM_EXTENT * Memory::page_size / 1024, SPIRAM_BASE);
