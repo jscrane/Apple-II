@@ -21,6 +21,15 @@ public:
 	static const uint8_t DISPLAY_LORES = 0x56;
 	static const uint8_t DISPLAY_HIRES = 0x57;
 
+	static const uint8_t AN0_OFF = 0x58;
+	static const uint8_t AN0_ON = 0x59;
+	static const uint8_t AN1_OFF = 0x5a;
+	static const uint8_t AN1_ON = 0x5b;
+	static const uint8_t AN2_OFF = 0x5c;
+	static const uint8_t AN2_ON = 0x5d;
+	static const uint8_t AN3_OFF = 0x5e;
+	static const uint8_t AN3_ON = 0x5f;
+
 	void on_access_speaker(std::function<void(void)> f) { speaker = f; }
 
 	void on_access_graphics_text(std::function<void(bool)> f) { graphics_text = f; }

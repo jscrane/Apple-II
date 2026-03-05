@@ -1,7 +1,7 @@
 #pragma once
 
-#define APPLE_II
-//#define APPLE_II_PLUS
+//#define APPLE_II
+#define APPLE_II_PLUS
 
 #define BG_COLOUR	BLACK
 #define FG_COLOUR	WHITE

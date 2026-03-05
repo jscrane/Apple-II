@@ -14,7 +14,9 @@ void Mixed::draw(Memory::address addr, uint8_t b) {
 
 	uint8_t row, col;
 	if (map_address(addr, row, col)) {
-		Screen &screen = row >= 20? static_cast<Screen&>(text): static_cast<Screen&>(lores);
-		screen.draw(addr, b);
+		if (row >= 20)
+			text.draw(addr, b);
+		else
+			lores.draw(addr, b);
 	}
 }

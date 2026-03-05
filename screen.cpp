@@ -28,5 +28,6 @@ void Screen::redraw() {
 		uint8_t c = _ram->get(addr);
 		_ram->set(addr, 0);
 		draw(addr, c);
+		yield();	// FIXME
 	}
 }
