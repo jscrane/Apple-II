@@ -55,40 +55,33 @@ Mixed mixed(text, lores);
 SoftSwitches switches;
 Input input(kbd, files);
 
-static Screen &get_active_screen() {
+static inline Screen &get_active_screen() {
 	if (switches.is_text()) return text;
 	if (switches.is_mixed()) return mixed;
 	return lores;
 }
 
 static void set_screen() {
-	static Screen *last;
-	static bool was_page2;
+
+	static uint8_t last_state;
+	bool text = switches.is_text(), mixed = switches.is_mixed();
+	bool top_text = text, bot_text = text || mixed;
+	uint8_t state = (switches.is_page2() << 2) | (bot_text << 1) | top_text;
+
+	if (state == last_state) return;
 
 	Screen &screen = get_active_screen();
 	memory.put(screen, switches.is_page2()? 0x0800: 0x0400);
 
-	if (was_page2 != switches.is_page2()) {
+	uint8_t diff = state ^ last_state;
+	last_state = state;
+
+	if (diff & 4) {
 		screen.redraw(0, 24);
-		was_page2 = switches.is_page2();
-		last = &screen;
 		return;
 	}
-	if (last == &screen)
-		return;
-
-	uint8_t rs = 0, re = 24;
-	if (last == &text)
-		re = 20;
-	else if (last == &lores)
-		rs = switches.is_text()? 0: 20;
-	else if (switches.is_text())
-		re = 20;
-	else
-		rs = 20;
-
-	screen.redraw(rs, re);
-	last = &screen;
+	if (diff & 1) screen.redraw(0, 20);
+	if (diff & 2) screen.redraw(20, 24);
 }
 
 static void reset(bool sd) {
