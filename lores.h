@@ -4,7 +4,7 @@ class LoRes: public Screen {
 public:
 	LoRes(Display &display): _display(display) {}
 
-	void draw(Memory::address a, uint8_t c);
+	void draw(uint8_t row, uint8_t col, uint8_t c, uint8_t oc);
 
 private:
 	Display &_display;
