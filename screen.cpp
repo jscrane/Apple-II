@@ -9,7 +9,7 @@
 #include "config.h"
 #include "screen.h"
 
-bool Screen::map_address(Memory::address a, uint8_t &row, uint8_t &col) {
+bool Screen::from_address(Memory::address a, uint8_t &row, uint8_t &col) {
 
 	uint8_t x = (a % 128);
 	if (x >= 120)	// "screen hole"?
@@ -22,12 +22,27 @@ bool Screen::map_address(Memory::address a, uint8_t &row, uint8_t &col) {
 	return true;
 }
 
-void Screen::redraw() {
+Memory::address Screen::to_address(uint8_t row) {
 
-	for (uint16_t addr = 0; addr < N; addr++) {
-		uint8_t c = _ram->get(addr);
-		_ram->set(addr, 0);
-		draw(addr, c);
-		yield();	// FIXME
+	return ((row & 7) << 7) | ((row & 24) * 5);
+}
+
+void Screen::draw(Memory::address a, uint8_t c) {
+
+	uint8_t row, col;
+	if (from_address(a, row, col))
+		draw(row, col, c, _ram->get(a));
+}
+
+void Screen::redraw(uint8_t rowstart, uint8_t rowend) {
+
+	DBG_DSP("redraw: %d %d", rowstart, rowend);
+
+	for (uint8_t row = rowstart; row < rowend; row++) {
+		Memory::address rowaddr = to_address(row);
+		for (uint8_t col = 0; col < CHARS_PER_LINE; col++) {
+			draw(row, col, _ram->get(rowaddr + col), 0);
+			yield();	// FIXME
+		}
 	}
 }

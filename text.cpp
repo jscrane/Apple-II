@@ -10,13 +10,8 @@
 #include "text.h"
 #include "charset.h"
 
-void Text::draw(Memory::address a, uint8_t c) {
+void Text::draw(uint8_t row, uint8_t col, uint8_t c, uint8_t oc) {
 
-	uint8_t row, col;
-	if (!map_address(a, row, col))
-		return;
-
-	uint8_t oc = _ram->get(a);
 	uint16_t cc = CHAR_HEIGHT * c, cm = CHAR_HEIGHT * oc;
 	uint16_t xc = col * CHAR_WIDTH, yc = row * CHAR_HEIGHT;
 	uint16_t fg = _display.fg(), bg = _display.bg();

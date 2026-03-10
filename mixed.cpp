@@ -10,13 +10,10 @@
 #include "lores.h"
 #include "mixed.h"
 
-void Mixed::draw(Memory::address addr, uint8_t b) {
+void Mixed::draw(uint8_t row, uint8_t col, uint8_t c, uint8_t oc) {
 
-	uint8_t row, col;
-	if (map_address(addr, row, col)) {
-		if (row >= 20)
-			text.draw(addr, b);
-		else
-			lores.draw(addr, b);
-	}
+	if (row < 20)
+		lores.draw(row, col, c, oc);
+	else
+		text.draw(row, col, c, oc);
 }
