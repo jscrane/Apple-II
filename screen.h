@@ -20,7 +20,7 @@ public:
 	}
 	virtual operator uint8_t() { return _ram->get(_acc); }
 
-	virtual void draw(uint8_t row, uint8_t col, uint8_t c, uint8_t oc) = 0;
+	virtual void draw(uint8_t row, uint8_t col, uint8_t c) = 0;
 
 protected:
 	Screen(): Memory::Device(N), _ram(0) {}

@@ -14,7 +14,7 @@ static inline bool is_flash(uint8_t b) { return b >= 0x40 && b < 0x80; }
 
 static inline bool is_inverse(uint8_t b) { return b < 0x40; }
 
-void Text::draw(uint8_t row, uint8_t col, uint8_t c, uint8_t) {
+void Text::draw(uint8_t row, uint8_t col, uint8_t c) {
 
 	uint16_t cc = CHAR_HEIGHT * (c & 0x3f);
 	uint16_t xc = col * CHAR_WIDTH, yc = row * CHAR_HEIGHT;
@@ -45,7 +45,7 @@ void Text::flash(uint8_t rowstart, uint8_t rowend, bool flash_is_inverse) {
 					uint8_t c = b & 0x3f;
 					if (flash_is_inverse)
 						c |= 0x80;
-					draw(row, col, c, 0);
+					draw(row, col, c);
 					yield();
 				}
 			}

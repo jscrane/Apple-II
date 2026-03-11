@@ -10,10 +10,10 @@
 #include "lores.h"
 #include "mixed.h"
 
-void Mixed::draw(uint8_t row, uint8_t col, uint8_t c, uint8_t oc) {
+void Mixed::draw(uint8_t row, uint8_t col, uint8_t c) {
 
 	if (row < 20)
-		lores.draw(row, col, c, oc);
+		lores.draw(row, col, c);
 	else
-		text.draw(row, col, c, oc);
+		text.draw(row, col, c);
 }

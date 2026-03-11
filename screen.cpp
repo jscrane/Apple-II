@@ -31,7 +31,7 @@ void Screen::draw(Memory::address a, uint8_t c) {
 
 	uint8_t row, col;
 	if (from_address(a, row, col))
-		draw(row, col, c, _ram->get(a));
+		draw(row, col, c);
 }
 
 void Screen::redraw(uint8_t rowstart, uint8_t rowend) {
@@ -41,7 +41,7 @@ void Screen::redraw(uint8_t rowstart, uint8_t rowend) {
 	for (uint8_t row = rowstart; row < rowend; row++) {
 		Memory::address rowaddr = to_address(row);
 		for (uint8_t col = 0; col < CHARS_PER_LINE; col++) {
-			draw(row, col, _ram->get(rowaddr + col), 0);
+			draw(row, col, _ram->get(rowaddr + col));
 			yield();	// FIXME
 		}
 	}
