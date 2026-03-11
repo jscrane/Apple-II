@@ -55,6 +55,8 @@ Mixed mixed(text, lores);
 SoftSwitches switches;
 Input input(kbd, files);
 
+#define FLASH_INTERVAL	250000
+
 static inline Screen &get_active_screen() {
 	if (switches.is_text()) return text;
 	if (switches.is_mixed()) return mixed;
@@ -80,6 +82,16 @@ static void set_screen() {
 	if ((diff & 4) || (diff & 2))
 		screen.redraw(20, 24);
 	last_state = state;
+}
+
+static void flash_text() {
+
+	static bool flash_is_inverse;
+
+	if (switches.is_text() || switches.is_mixed())
+		text.flash(switches.is_text()? 0: 20, 24, flash_is_inverse);
+
+	flash_is_inverse = !flash_is_inverse;
 }
 
 static void reset(bool sd) {
@@ -184,6 +196,7 @@ void setup() {
 #endif
 
 	kbd.register_fnkey_handler(function_key);
+	machine.interval_timer(FLASH_INTERVAL, flash_text);
 	machine.register_reset_handler(reset);
 	machine.reset();
 }
