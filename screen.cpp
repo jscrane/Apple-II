@@ -60,7 +60,7 @@ void Screen::set(Memory::address a, uint8_t c) {
 
 	uint8_t row, col;
 	if (is_flash(c) && from_address(_acc, row, col))
-		_flashrows |= (1 << row);
+		_flashrows |= (1UL << row);
 
 	draw(_acc, c);
 }
