@@ -65,8 +65,8 @@ static void set_screen() {
 
 	static uint8_t last_state;
 	bool text = switches.is_text(), mixed = switches.is_mixed();
-	bool top_text = text, bot_text = text || mixed;
-	uint8_t state = (switches.is_page2() << 2) | (bot_text << 1) | top_text;
+	bool top_text = text, btm_text = text || mixed;
+	uint8_t state = (switches.is_page2() << 2) | (btm_text << 1) | top_text;
 
 	if (state == last_state) return;
 
@@ -74,14 +74,12 @@ static void set_screen() {
 	memory.put(screen, switches.is_page2()? 0x0800: 0x0400);
 
 	uint8_t diff = state ^ last_state;
-	last_state = state;
+	if ((diff & 4) || (diff & 1))
+		screen.redraw(0, 20);
 
-	if (diff & 4) {
-		screen.redraw(0, 24);
-		return;
-	}
-	if (diff & 1) screen.redraw(0, 20);
-	if (diff & 2) screen.redraw(20, 24);
+	if ((diff & 4) || (diff & 2))
+		screen.redraw(20, 24);
+	last_state = state;
 }
 
 static void reset(bool sd) {
