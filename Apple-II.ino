@@ -77,10 +77,10 @@ static void set_screen() {
 
 	uint8_t diff = state ^ last_state;
 	if ((diff & 4) || (diff & 1))
-		screen.redraw(0, 20);
+		screen.redraw(0, SPLIT_LINE);
 
 	if ((diff & 4) || (diff & 2))
-		screen.redraw(20, 24);
+		screen.redraw(SPLIT_LINE, SCREEN_LINES);
 	last_state = state;
 }
 
@@ -104,13 +104,9 @@ static void reset(bool sd) {
 	switches.on_access_page([](bool show_page2) {
 		if (show_page2) {
 			memory.put(pages[1], 0x0400);
-			text.show(pages[2]);
-			lores.show(pages[2]);
-			mixed.show(pages[2]);
+			Screen::show(pages[2]);
 		} else {
-			text.show(pages[1]);
-			lores.show(pages[1]);
-			mixed.show(pages[1]);
+			Screen::show(pages[1]);
 			memory.put(pages[2], 0x0800);
 		}
 	});

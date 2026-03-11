@@ -34,6 +34,37 @@ void Screen::draw(Memory::address a, uint8_t c) {
 		draw(row, col, c);
 }
 
+uint32_t Screen::_flashrows;
+
+ram<> *Screen::_ram;
+
+void Screen::show(ram<N> &r) {
+
+	_ram = &r;
+	_flashrows = 0;
+
+	uint32_t bit = 1;
+	for (uint8_t row = 0; row < SCREEN_LINES; row++, bit <<= 1) {
+		Memory::address rowaddr = to_address(row);
+		for (uint8_t col = 0; col < CHARS_PER_LINE; col++)
+			if (is_flash(_ram->get(rowaddr + col))) {
+				_flashrows |= bit;
+				break;
+			}
+	}
+}
+
+void Screen::set(Memory::address a, uint8_t c) {
+
+	_ram->set(_acc, c);
+
+	uint8_t row, col;
+	if (is_flash(c) && from_address(_acc, row, col))
+		_flashrows |= (1 << row);
+
+	draw(_acc, c);
+}
+
 void Screen::redraw(uint8_t rowstart, uint8_t rowend) {
 
 	DBG_DSP("redraw: %d %d", rowstart, rowend);

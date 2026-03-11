@@ -10,10 +10,6 @@
 #include "text.h"
 #include "charset.h"
 
-static inline bool is_flash(uint8_t b) { return b >= 0x40 && b < 0x80; }
-
-static inline bool is_inverse(uint8_t b) { return b < 0x40; }
-
 void Text::draw(uint8_t row, uint8_t col, uint8_t c) {
 
 	uint16_t cc = CHAR_HEIGHT * (c & 0x3f);
@@ -39,9 +35,11 @@ void Text::flash(uint8_t rowstart, uint8_t rowend, bool flash_is_inverse) {
 	for (uint8_t row = rowstart; row < rowend; row++, bit <<= 1)
 		if (_flashrows & bit) {
 			Memory::address rowaddr = to_address(row);
+			bool found_flash = false;
 			for (uint8_t col = 0; col < CHARS_PER_LINE; col++) {
 				uint8_t b = _ram->get(rowaddr + col);
 				if (is_flash(b)) {
+					found_flash = true;
 					uint8_t c = b & 0x3f;
 					if (flash_is_inverse)
 						c |= 0x80;
@@ -49,24 +47,7 @@ void Text::flash(uint8_t rowstart, uint8_t rowend, bool flash_is_inverse) {
 					yield();
 				}
 			}
+			if (!found_flash)
+				_flashrows &= ~bit;
 		}
-}
-
-void Text::operator=(uint8_t c) {
-
-	Screen::operator=(c);
-
-	uint8_t row, col;
-	if (from_address(_acc, row, col)) {
-		uint8_t bit = 1 << row;
-		if (is_flash(c))
-			_flashrows |= bit;
-		else if (_flashrows & bit) {
-			Memory::address rowaddr = to_address(row);
-			for (uint8_t col = 0; col < CHARS_PER_LINE; col++)
-				if (is_flash(_ram->get(rowaddr + col)))
-					return;
-			_flashrows &= ~bit;
-		}
-	}
 }
