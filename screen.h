@@ -6,33 +6,39 @@
 #define CHAR_WIDTH	7
 #define CHAR_HEIGHT	8
 
-inline bool is_flash(uint8_t b) { return b >= 0x40 && b < 0x80; }
-
-inline bool is_inverse(uint8_t b) { return b < 0x40; }
-
 class Screen: public Memory::Device {
 public:
 	static const unsigned N = 1024;
-	static void show(ram<N> &r);
 
-	virtual void operator=(uint8_t c) { if (c != _ram->get(_acc)) set(_acc, c); }
+	Screen(Display &display): Memory::Device(N), _display(display) {}
+	void show(ram<N> &r);
+
+	virtual void operator=(uint8_t c) { if (c != _ram->get(_acc)) set(c); }
 	virtual operator uint8_t() { return _ram->get(_acc); }
 
-	virtual void draw(uint8_t row, uint8_t col, uint8_t c) = 0;
-	void redraw(uint8_t rowstart, uint8_t rowend);
+	void redraw_top(bool as_text) { _top_text = as_text; redraw(0, SPLIT_LINE, as_text); }
+	void redraw_btm(bool as_text) { _btm_text = as_text; redraw(SPLIT_LINE, SCREEN_LINES, as_text); }
 
-protected:
-	Screen(): Memory::Device(N) {}
+	void flash_text(bool flash_is_inverse);
 
-	void set(Memory::address a, uint8_t c);
+private:
+	void redraw(uint8_t, uint8_t, bool);
 
-	void draw(Memory::address a, uint8_t c);
+	void draw_text(uint8_t, uint8_t, uint8_t);
 
-	static bool from_address(Memory::address a, uint8_t &row, uint8_t &col);
+	void draw_lores(uint8_t, uint8_t, uint8_t);
 
-	static Memory::address to_address(uint8_t row);
+	void set(uint8_t);
 
-	static ram<N> *_ram;
+	bool from_address(Memory::address a, uint8_t &row, uint8_t &col);
 
-	static uint32_t _flashrows;
+	Memory::address to_address(uint8_t row);
+
+	ram<N> *_ram;
+
+	uint32_t _flashrows;
+
+	Display &_display;
+
+	bool _top_text, _btm_text;
 };

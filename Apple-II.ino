@@ -4,9 +4,6 @@
 
 #include "config.h"
 #include "screen.h"
-#include "text.h"
-#include "lores.h"
-#include "mixed.h"
 #include "softswitches.h"
 #include "input.h"
 
@@ -49,19 +46,11 @@ ps2_serial_kbd kbd;
 #endif
 
 Display display;
-Text text(display);
-LoRes lores(display);
-Mixed mixed(text, lores);
+Screen screen(display);
 SoftSwitches switches;
 Input input(kbd, files);
 
 #define FLASH_INTERVAL	250000
-
-static inline Screen &get_active_screen() {
-	if (switches.is_text()) return text;
-	if (switches.is_mixed()) return mixed;
-	return lores;
-}
 
 static void set_screen() {
 
@@ -72,15 +61,12 @@ static void set_screen() {
 
 	if (state == last_state) return;
 
-	Screen &screen = get_active_screen();
-	memory.put(screen, switches.is_page2()? 0x0800: 0x0400);
-
 	uint8_t diff = state ^ last_state;
 	if ((diff & 4) || (diff & 1))
-		screen.redraw(0, SPLIT_LINE);
+		screen.redraw_top(top_text);
 
 	if ((diff & 4) || (diff & 2))
-		screen.redraw(SPLIT_LINE, SCREEN_LINES);
+		screen.redraw_btm(btm_text);
 	last_state = state;
 }
 
@@ -89,7 +75,7 @@ static void flash_text() {
 	static bool flash_is_inverse;
 
 	if (switches.is_text() || switches.is_mixed())
-		text.flash(switches.is_text()? 0: 20, 24, flash_is_inverse);
+		screen.flash_text(flash_is_inverse);
 
 	flash_is_inverse = !flash_is_inverse;
 }
@@ -104,9 +90,11 @@ static void reset(bool sd) {
 	switches.on_access_page([](bool show_page2) {
 		if (show_page2) {
 			memory.put(pages[1], 0x0400);
-			Screen::show(pages[2]);
+			memory.put(screen, 0x0800);
+			screen.show(pages[2]);
 		} else {
-			Screen::show(pages[1]);
+			screen.show(pages[1]);
+			memory.put(screen, 0x0400);
 			memory.put(pages[2], 0x0800);
 		}
 	});
@@ -128,27 +116,21 @@ static void reset(bool sd) {
 	}
 }
 
-static const char *open(const char *filename) {
-	if (filename) {
-		display.status(filename);
-		return filename;
-	}
-	display.status("No file");
-	return 0;
+static inline void opened(const char *filename) {
+	display.status(filename? filename: "No file");
 }
 
 static void function_key(uint8_t fn) {
-	static const char *filename;
 
 	switch (fn) {
 	case 1:
 		machine.reset();
 		break;
 	case 2:
-		filename = open(files.advance());
+		opened(files.advance());
 		break;
 	case 3:
-		filename = open(files.rewind());
+		opened(files.rewind());
 		break;
 	case 5:
 		input.load();
