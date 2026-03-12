@@ -4,9 +4,6 @@
 
 #include "config.h"
 #include "screen.h"
-#include "text.h"
-#include "lores.h"
-#include "mixed.h"
 #include "softswitches.h"
 #include "input.h"
 
@@ -49,39 +46,38 @@ ps2_serial_kbd kbd;
 #endif
 
 Display display;
-Text text(display);
-LoRes lores(display);
-Mixed mixed(text, lores);
+Screen screen(display);
 SoftSwitches switches;
 Input input(kbd, files);
 
-static inline Screen &get_active_screen() {
-	if (switches.is_text()) return text;
-	if (switches.is_mixed()) return mixed;
-	return lores;
-}
+#define FLASH_INTERVAL	250000
 
 static void set_screen() {
 
 	static uint8_t last_state;
 	bool text = switches.is_text(), mixed = switches.is_mixed();
-	bool top_text = text, bot_text = text || mixed;
-	uint8_t state = (switches.is_page2() << 2) | (bot_text << 1) | top_text;
+	bool top_text = text, btm_text = text || mixed;
+	uint8_t state = (switches.is_page2() << 2) | (btm_text << 1) | top_text;
 
 	if (state == last_state) return;
 
-	Screen &screen = get_active_screen();
-	memory.put(screen, switches.is_page2()? 0x0800: 0x0400);
-
 	uint8_t diff = state ^ last_state;
-	last_state = state;
+	if ((diff & 4) || (diff & 1))
+		screen.redraw_top(top_text);
 
-	if (diff & 4) {
-		screen.redraw(0, 24);
-		return;
-	}
-	if (diff & 1) screen.redraw(0, 20);
-	if (diff & 2) screen.redraw(20, 24);
+	if ((diff & 4) || (diff & 2))
+		screen.redraw_btm(btm_text);
+	last_state = state;
+}
+
+static void flash_text() {
+
+	static bool flash_is_inverse;
+
+	if (switches.is_text() || switches.is_mixed())
+		screen.flash_text(flash_is_inverse);
+
+	flash_is_inverse = !flash_is_inverse;
 }
 
 static void reset(bool sd) {
@@ -94,13 +90,11 @@ static void reset(bool sd) {
 	switches.on_access_page([](bool show_page2) {
 		if (show_page2) {
 			memory.put(pages[1], 0x0400);
-			text.show(pages[2]);
-			lores.show(pages[2]);
-			mixed.show(pages[2]);
+			memory.put(screen, 0x0800);
+			screen.show(pages[2]);
 		} else {
-			text.show(pages[1]);
-			lores.show(pages[1]);
-			mixed.show(pages[1]);
+			screen.show(pages[1]);
+			memory.put(screen, 0x0400);
 			memory.put(pages[2], 0x0800);
 		}
 	});
@@ -122,27 +116,21 @@ static void reset(bool sd) {
 	}
 }
 
-static const char *open(const char *filename) {
-	if (filename) {
-		display.status(filename);
-		return filename;
-	}
-	display.status("No file");
-	return 0;
+static inline void opened(const char *filename) {
+	display.status(filename? filename: "No file");
 }
 
 static void function_key(uint8_t fn) {
-	static const char *filename;
 
 	switch (fn) {
 	case 1:
 		machine.reset();
 		break;
 	case 2:
-		filename = open(files.advance());
+		opened(files.advance());
 		break;
 	case 3:
-		filename = open(files.rewind());
+		opened(files.rewind());
 		break;
 	case 5:
 		input.load();
@@ -186,6 +174,7 @@ void setup() {
 #endif
 
 	kbd.register_fnkey_handler(function_key);
+	machine.interval_timer(FLASH_INTERVAL, flash_text);
 	machine.register_reset_handler(reset);
 	machine.reset();
 }
