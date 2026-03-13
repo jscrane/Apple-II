@@ -6,12 +6,14 @@
 #include "screen.h"
 #include "softswitches.h"
 #include "input.h"
+#include "disk.h"
 
 Memory memory;
 r6502 cpu(memory);
 Arduino machine(cpu);
 ram<> pages[RAM_PAGES];
 flash_filer files(PROGRAMS);
+flash_file driveA(1), driveB(2);
 
 #if defined(APPLE_II)
 #include "firmware/original_monitor.h"
@@ -49,6 +51,7 @@ Display display;
 Screen screen(display);
 SoftSwitches switches;
 Input input(kbd, files);
+Disk disk(memory, driveA, driveB);
 
 #define FLASH_INTERVAL	250000
 
@@ -102,6 +105,11 @@ static void reset(bool sd) {
 	switches.on_access_full_mixed([](bool) { set_screen(); });
 
 	switches.on_access_speaker([]() { digitalWrite(PWM_SOUND, !digitalRead(PWM_SOUND)); });
+
+	machine.register_cpu_halted_handler([]() {
+		disk.on_illegal_instruction();
+		cpu.resume();
+	});
 
 	if (!sd) {
 		DBG_EMU("No SD Card");
