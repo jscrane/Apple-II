@@ -83,6 +83,12 @@ static void flash_text() {
 	flash_is_inverse = !flash_is_inverse;
 }
 
+static void file_status() {
+	static const char *device_names[MAX_FILES] = { "Tape:", "A:", "B:", "C:", "D:" };
+	const char *filename = files.filename();
+	display.statusf("%s%s", device_names[files.device()], filename? filename: "No file");
+}
+
 static void reset(bool sd) {
 
 	input.reset();
@@ -110,6 +116,9 @@ static void reset(bool sd) {
 		disk.on_illegal_instruction();
 		cpu.resume();
 	});
+//	machine.register_cpu_debug_handler([]() {
+//		return cpu.pc() >= 0xc600 && cpu.pc() < 0xc700;
+//	});
 
 	if (!sd) {
 		DBG_EMU("No SD Card");
@@ -120,12 +129,10 @@ static void reset(bool sd) {
 	} else {
 #if defined(APPLE_II)
 		display.status("Ctrl-B: BASIC");
+#else
+		file_status();
 #endif
 	}
-}
-
-static inline void opened(const char *filename) {
-	display.status(filename? filename: "No file");
 }
 
 static void function_key(uint8_t fn) {
@@ -133,20 +140,24 @@ static void function_key(uint8_t fn) {
 	switch (fn) {
 	case 1:
 		machine.reset();
-		break;
+		return;
 	case 2:
-		opened(files.advance());
+		files.advance();
 		break;
 	case 3:
-		opened(files.rewind());
+		files.rewind();
 		break;
 	case 5:
 		input.load();
+		return;
+	case 8:
+		files.next_device();
 		break;
 	case 10:
 		machine.debug_cpu();
-		break;
+		return;
 	}
+	file_status();
 }
 
 void setup() {
@@ -167,6 +178,7 @@ void setup() {
 #endif
 
 	memory.put(switches, 0xc000);
+	memory.put(disk.bootprom, 0xc600);
 	memory.put(monitor, 0xf800);
 
 #if defined(APPLE_II)

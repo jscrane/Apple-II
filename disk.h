@@ -4,6 +4,7 @@ class Disk {
 public:
 	Disk(Memory &memory, flash_file &driveA, flash_file &driveB);
 
+	prom bootprom;
 	void on_illegal_instruction();
 
 private:

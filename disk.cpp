@@ -37,10 +37,7 @@ static const uint8_t diskboot[] PROGMEM = {
 	0x60,			// rts
 };
 
-prom bootprom(diskboot, sizeof(diskboot));
-
-Disk::Disk(Memory &memory, flash_file &driveA, flash_file &driveB): _memory(memory), _driveA(driveA), _driveB(driveB) {
-	memory.put(bootprom, 0xc600);
+Disk::Disk(Memory &memory, flash_file &driveA, flash_file &driveB): bootprom(diskboot, sizeof(diskboot)), _memory(memory), _driveA(driveA), _driveB(driveB) {
 	_drive = &driveA;	// FIXME
 }
 
@@ -70,12 +67,15 @@ void Disk::on_illegal_instruction() {
 	static bool dos_loaded = false;
 	uint8_t A = _memory[0x04f8], X = _memory[0x04f9], Y = _memory[0x04fa], S = _memory[0x04fb];
 
-	DBG_EMU("sigill: %02x %02x %02x %02x", A, X, Y, S);
+	DBG_EMU("sigill: %02x %02x %02x %02x %02x %02x", A, X, Y, S, (uint8_t)_memory[0x48], (uint8_t)_memory[0x49]);
 
 	if (dos_loaded) {
-		Memory::address iob = (A << 8) | Y;
+		//Memory::address iob = (A << 8) | Y;
+		Memory::address iob = 0xb7e8;
 		uint8_t cmd = _memory[iob+12], trk = _memory[iob+4], sec = _memory[iob+5];
 		Memory::address addr = (_memory[iob+9] << 8) | _memory[iob+8];
+
+		DBG_EMU("iob: %04x cmd: %d trk: %d sec: %d addr: %04x", iob, cmd, trk, sec, addr);
 
 		seek(trk, sec);
 		if (cmd == CMD_READ)
@@ -86,10 +86,10 @@ void Disk::on_illegal_instruction() {
 	} else {
 		// load (track 0, sectors 0-9) to $0800 (10 sectors, 2560 bytes)
 		seek(0, 0);
-		read(0x0800, 10 * BYTES_PER_SECTOR);
+		uint16_t n = read(0x0800, 10 * BYTES_PER_SECTOR);
 
 		// load (track 0, sector A to track 2, sector C) to $9d00 (35 sectors, 8960 bytes)
-		read(0x9d00, 35 * BYTES_PER_SECTOR);
+		uint16_t m = read(0x9d00, 35 * BYTES_PER_SECTOR);
 
 		// RWTS hook
 		_memory[0xbd00] = 0x4c;
@@ -104,6 +104,7 @@ void Disk::on_illegal_instruction() {
 		_memory[0x2b] = 0x60;
 		_memory[0xb798] = 0x60;
  
+		DBG_EMU("loaded DOS %d %d", n, m);
 		dos_loaded = true;
 	}
 }
