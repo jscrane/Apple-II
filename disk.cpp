@@ -17,6 +17,8 @@
 #define CMD_READ	1
 #define CMD_WRITE	2
 
+// see https://gswv.apple2.org.za/a2zine/GS.WorldView/Resources/DOS.3.3.ANATOMY/BOOT.PROCESS.txt
+
 // the disk is accessed for the first time with PR #6
 // "permanent redirect to slot #6"
 // below we store A, Y, Y and S in a "screen hole"
@@ -70,8 +72,7 @@ void Disk::on_illegal_instruction() {
 	DBG_EMU("sigill: %02x %02x %02x %02x %02x %02x", A, X, Y, S, (uint8_t)_memory[0x48], (uint8_t)_memory[0x49]);
 
 	if (dos_loaded) {
-		//Memory::address iob = (A << 8) | Y;
-		Memory::address iob = 0xb7e8;
+		Memory::address iob = (A << 8) | Y;
 		uint8_t cmd = _memory[iob+12], trk = _memory[iob+4], sec = _memory[iob+5];
 		Memory::address addr = (_memory[iob+9] << 8) | _memory[iob+8];
 
@@ -92,11 +93,11 @@ void Disk::on_illegal_instruction() {
 		uint16_t m = read(0x9d00, 35 * BYTES_PER_SECTOR);
 
 		// RWTS hook
-		_memory[0xbd00] = 0x4c;
+		_memory[0xbd00] = 0x4c;		// jmp $c600
 		_memory[0xbd01] = 0x00;
 		_memory[0xbd02] = 0xc6;
 
-		// tweak return address
+		// return to DOS coldstart at $9d84
 		_memory[0x0100 + S + 1] = 0x83;
 		_memory[0x0100 + S + 2] = 0x9d;
 
@@ -104,6 +105,18 @@ void Disk::on_illegal_instruction() {
 		_memory[0x2b] = 0x60;
 		_memory[0xb798] = 0x60;
  
+		// set I/O hooks
+		_memory[0x36] = 0xf0;
+		_memory[0x37] = 0xfd;		// output to screen
+		_memory[0x38] = 0x1b;
+		_memory[0x39] = 0xfd;		// input from keyboard
+
+		// force initialisation
+		_memory[0x48] = 0xe8;
+		_memory[0x49] = 0xb7;		// iob ptr
+		_memory[0xb7f4] = 0x01;		// read cmd
+		_memory[0xb7ec] = 0x017;	// track 17 (catalog)
+
 		DBG_EMU("loaded DOS %d %d", n, m);
 		dos_loaded = true;
 	}

@@ -116,9 +116,9 @@ static void reset(bool sd) {
 		disk.on_illegal_instruction();
 		cpu.resume();
 	});
-//	machine.register_cpu_debug_handler([]() {
-//		return cpu.pc() >= 0xc600 && cpu.pc() < 0xc700;
-//	});
+	machine.register_cpu_debug_handler([]() {
+		return (cpu.pc() >= 0xc600 && cpu.pc() < 0xc700) || (cpu.pc() >= 0x9d80 && cpu.pc() < 0x9d90);
+	});
 
 	if (!sd) {
 		DBG_EMU("No SD Card");
@@ -174,7 +174,7 @@ void setup() {
 
 #if defined(USE_SPIRAM)
 	DBG_INI("SpiRAM: %dkB at 0x%04x", SPIRAM_EXTENT * Memory::page_size / 1024, SPIRAM_BASE);
-	memory.put(sram, SPIRAM_BASE, SPIRAM_EXTENT);
+	memory.put(sram, SPIRAM_BASE, SPIRAM_EXTENT * Memory::page_size);
 #endif
 
 	memory.put(switches, 0xc000);
