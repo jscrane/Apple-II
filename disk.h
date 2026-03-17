@@ -3,9 +3,10 @@
 class Disk {
 public:
 	Disk(Memory &memory, flash_file &driveA, flash_file &driveB);
+	void reset();
 
 	prom bootprom;
-	void on_illegal_instruction();
+	void on_illegal_instruction(Memory::address);
 
 private:
 	void seek(uint8_t trk, uint8_t sec);
@@ -14,4 +15,5 @@ private:
 
 	Memory &_memory;
 	flash_file &_driveA, &_driveB, *_drive;
+	uint8_t _boot;
 };

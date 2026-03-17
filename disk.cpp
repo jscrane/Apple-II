@@ -18,6 +18,7 @@
 #define CMD_WRITE	2
 
 // see https://gswv.apple2.org.za/a2zine/GS.WorldView/Resources/DOS.3.3.ANATOMY/BOOT.PROCESS.txt
+// https://6502disassembly.com/a2-rom/C600ROM.html
 
 // the disk is accessed for the first time with PR #6
 // "permanent redirect to slot #6"
@@ -28,19 +29,36 @@
 static const uint8_t diskboot[] PROGMEM = {
 
 	// .org $c600
-	0x8d, 0xf8, 0x04,	// sta $04f8
-	0x8e, 0xf9, 0x04,	// stx $04f9
-	0x8c, 0xfa, 0x04,	// sty $04fa
-	0xba,			// tsx
-	0x8e, 0xfb, 0x04,	// stx $04fb
 	0x02,			// illegal instruction
-	0xae, 0xf9, 0x04,	// ldx $04f9
-	0x18,			// clc
-	0x60,			// rts
+	0xa2, 0x60,		// ldx #$60
+	0x4c, 0x01, 0x08,	// jmp $0801
+
+	// 86 bytes padding
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+
+	// .org $c65c
+	0x02,			// illegal instruction
+	0x18,			// clc (= success)
+	0xa2, 0x60,		// ldx #$60
+	0x4c, 0x01, 0x08,	// jmp $0801
 };
 
 Disk::Disk(Memory &memory, flash_file &driveA, flash_file &driveB): bootprom(diskboot, sizeof(diskboot)), _memory(memory), _driveA(driveA), _driveB(driveB) {
-	_drive = &driveA;	// FIXME
+}
+
+void Disk::reset() {
+	_drive = &_driveA;
+	_boot = 0;
 }
 
 void Disk::seek(uint8_t trk, uint8_t sec) {
@@ -64,60 +82,34 @@ uint16_t Disk::write(Memory::address addr, uint16_t bytes) {
 	return i;
 }
 
-void Disk::on_illegal_instruction() {
+void Disk::on_illegal_instruction(Memory::address addr) {
 
-	static bool dos_loaded = false;
-	uint8_t A = _memory[0x04f8], X = _memory[0x04f9], Y = _memory[0x04fa], S = _memory[0x04fb];
+	DBG_EMU("addr: %04x", addr);
 
-	DBG_EMU("sigill: %02x %02x %02x %02x %02x %02x", A, X, Y, S, (uint8_t)_memory[0x48], (uint8_t)_memory[0x49]);
+	if (addr == 0xc600) {
 
-	if (dos_loaded) {
-		Memory::address iob = (A << 8) | Y;
-		uint8_t cmd = _memory[iob+12], trk = _memory[iob+4], sec = _memory[iob+5];
-		Memory::address addr = (_memory[iob+9] << 8) | _memory[iob+8];
-
-		DBG_EMU("iob: %04x cmd: %d trk: %d sec: %d addr: %04x", iob, cmd, trk, sec, addr);
-
-		seek(trk, sec);
-		if (cmd == CMD_READ)
-			read(addr, BYTES_PER_SECTOR);
-		else if (cmd == CMD_WRITE)
-			write(addr, BYTES_PER_SECTOR);
-
-	} else {
-		// load (track 0, sectors 0-9) to $0800 (10 sectors, 2560 bytes)
+		DBG_EMU("boot0");
 		seek(0, 0);
-		uint16_t n = read(0x0800, 10 * BYTES_PER_SECTOR);
-
-		// load (track 0, sector A to track 2, sector C) to $9d00 (35 sectors, 8960 bytes)
-		uint16_t m = read(0x9d00, 35 * BYTES_PER_SECTOR);
-
-		// RWTS hook
-		_memory[0xbd00] = 0x4c;		// jmp $c600
-		_memory[0xbd01] = 0x00;
-		_memory[0xbd02] = 0xc6;
-
-		// return to DOS coldstart at $9d84
-		_memory[0x0100 + S + 1] = 0x83;
-		_memory[0x0100 + S + 2] = 0x9d;
-
-		// set current drive
-		_memory[0x2b] = 0x60;
-		_memory[0xb798] = 0x60;
- 
-		// set I/O hooks
-		_memory[0x36] = 0xf0;
-		_memory[0x37] = 0xfd;		// output to screen
-		_memory[0x38] = 0x1b;
-		_memory[0x39] = 0xfd;		// input from keyboard
-
-		// force initialisation
-		_memory[0x48] = 0xe8;
-		_memory[0x49] = 0xb7;		// iob ptr
-		_memory[0xb7f4] = 0x01;		// read cmd
-		_memory[0xb7ec] = 0x017;	// track 17 (catalog)
-
-		DBG_EMU("loaded DOS %d %d", n, m);
-		dos_loaded = true;
+		read(0x0800, BYTES_PER_SECTOR);
+		_memory[0x27] = 0x08;		// data_ptr (hi)
+		_memory[0x2b] = 0x60;		// slot number << 4
+		_memory[0x3e] = 0x5c;		// jump vector
+		_memory[0x3f] = 0xc6;
+		_boot++;
+		return;
 	}
+
+	if (addr == 0xc65c) {
+
+		uint8_t bsectr = _memory[0x3d];
+		Memory::address dest = (_memory[0x27] << 8);
+		DBG_EMU("boot1: %02x %04x", bsectr, dest);
+		seek(0, bsectr);
+		read(dest, BYTES_PER_SECTOR);
+		_memory[0x3e] = 0x5c;
+		_memory[0x3f] = 0xc6;
+		_boot++;
+		return;
+	}
+
 }

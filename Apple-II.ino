@@ -92,6 +92,7 @@ static void file_status() {
 static void reset(bool sd) {
 
 	input.reset();
+	disk.reset();
 
 	switches.on_read_keyboard([]() { return input.read(); });
 	switches.on_strobe_keyboard([]() { input.strobe(); });
@@ -113,11 +114,13 @@ static void reset(bool sd) {
 	switches.on_access_speaker([]() { digitalWrite(PWM_SOUND, !digitalRead(PWM_SOUND)); });
 
 	machine.register_cpu_halted_handler([]() {
-		disk.on_illegal_instruction();
+		disk.on_illegal_instruction(cpu.pc());
 		cpu.resume();
 	});
 	machine.register_cpu_debug_handler([]() {
-		return (cpu.pc() >= 0xc600 && cpu.pc() < 0xc700) || (cpu.pc() >= 0x9d80 && cpu.pc() < 0x9d90);
+		return (cpu.pc() >= 0xc600 && cpu.pc() < 0xc700)
+			|| (cpu.pc() >= 0x0800 && cpu.pc() < 0x0900)
+			|| (cpu.pc() >= 0x2d00 && cpu.pc() < 0x3700);
 	});
 
 	if (!sd) {
