@@ -19,13 +19,9 @@
 #define CMD_FORMAT	4
 
 // see https://gswv.apple2.org.za/a2zine/GS.WorldView/Resources/DOS.3.3.ANATOMY/BOOT.PROCESS.txt
+// https://htmlpreview.github.io/?https://github.com/Michaelangel007/apple2_dos33/blob/master/dos33.html
 
-// the disk is accessed for the first time with PR #6
-// "permanent redirect to slot #6"
-// below we store A, Y, Y and S in a "screen hole"
-// then trigger an illegal instruction which traps
-// to Disk::on_illegal_instruction().
-// on cpu.resume(), clear carry ("success") and return.
+// the disk is accessed for the first time with PR #6 "permanent redirect to slot #6"
 static const uint8_t diskboot[] PROGMEM = {
 
 	// .org $c600
@@ -134,6 +130,7 @@ static const uint8_t reverse_sector_map[] = {
 void Disk::on_illegal_instruction(Memory::address addr) {
 
 	if (addr == 0xc65c) {
+		// ROM address (BOOT0)
 		uint8_t sector = reverse_sector_map[_memory[0x3d]];
 		uint8_t track = _memory[0x41];
 		Memory::address dest = _memory[0x26] | (_memory[0x27] << 8);
@@ -156,7 +153,8 @@ void Disk::on_illegal_instruction(Memory::address addr) {
 			_memory[0x3d05] = 0x18;		// clc (= success)
 			_memory[0x3d06] = 0x60;		// rts
 		}
-	} else if (addr == 0x3d04) {
+	} else if (addr == 0x3d04 || addr == 0xbd04) {
+		// $3d00 is RWTS in BOOT2, $bd00 is same, after relocation
 		Memory::address iobp = _memory[0x48] | (_memory[0x49] << 8);
 		uint8_t drive = _memory[iobp + 2];
 		uint8_t track = _memory[iobp + 4];
@@ -173,5 +171,6 @@ void Disk::on_illegal_instruction(Memory::address addr) {
 		// FIXME: format?
 
 		_memory[iobp + 0x0d] = 0x00; 	// success
-	}
+	} else
+		DBG_EMU("sigill: unhandled %04x", addr);
 }
