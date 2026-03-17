@@ -9,11 +9,11 @@ public:
 	void on_illegal_instruction(Memory::address);
 
 private:
-	void seek(uint8_t trk, uint8_t sec);
-	uint16_t read(Memory::address to, uint16_t bytes);
-	uint16_t write(Memory::address from, uint16_t bytes);
+	void seek(flash_file *drive, uint8_t trk, uint8_t sec);
+	uint16_t read(flash_file *drive, Memory::address to, uint16_t bytes);
+	uint16_t write(flash_file *drive, Memory::address from, uint16_t bytes);
 
 	Memory &_memory;
-	flash_file &_driveA, &_driveB, *_drive;
+	flash_file &_driveA, &_driveB;
 	uint8_t _boot;
 };

@@ -14,9 +14,16 @@
 #define BYTES_PER_SECTOR	256
 #define SECTORS_PER_TRACK	16
 #define MAX_TRACK	35
+
 #define CMD_READ	1
 #define CMD_WRITE	2
 #define CMD_FORMAT	4
+
+#define NO_ERROR	0x00
+#define WRITE_PROTECT	0x10
+#define BAD_VOLUME	0x20
+#define DRIVE_ERROR	0x40
+#define READ_ERROR	0x80
 
 // see https://gswv.apple2.org.za/a2zine/GS.WorldView/Resources/DOS.3.3.ANATOMY/BOOT.PROCESS.txt
 // https://htmlpreview.github.io/?https://github.com/Michaelangel007/apple2_dos33/blob/master/dos33.html
@@ -97,28 +104,27 @@ Disk::Disk(Memory &memory, flash_file &driveA, flash_file &driveB): bootprom(dis
 }
 
 void Disk::reset() {
-	_drive = &_driveA;
 	_boot = 0;
 }
 
-void Disk::seek(uint8_t trk, uint8_t sec) {
+void Disk::seek(flash_file *drive, uint8_t trk, uint8_t sec) {
 
-	_drive->seek(BYTES_PER_SECTOR * (sec + trk * SECTORS_PER_TRACK));
+	drive->seek(BYTES_PER_SECTOR * (sec + trk * SECTORS_PER_TRACK));
 }
 
-uint16_t Disk::read(Memory::address addr, uint16_t bytes) {
+uint16_t Disk::read(flash_file *drive, Memory::address addr, uint16_t bytes) {
 
 	uint16_t i;
-	for (i = 0; i < bytes && _drive->more(); i++)
-		_memory[addr++] = _drive->read();
+	for (i = 0; i < bytes && drive->more(); i++)
+		_memory[addr++] = drive->read();
 	return i;
 }
 
-uint16_t Disk::write(Memory::address addr, uint16_t bytes) {
+uint16_t Disk::write(flash_file *drive, Memory::address addr, uint16_t bytes) {
 
 	uint16_t i;
-	for (i = 0; i < bytes && _drive->more(); i++)
-		_drive->write(_memory[addr++]);
+	for (i = 0; i < bytes && drive->more(); i++)
+		drive->write(_memory[addr++]);
 	return i;
 }
 
@@ -136,8 +142,8 @@ void Disk::on_illegal_instruction(Memory::address addr) {
 		Memory::address dest = _memory[0x26] | (_memory[0x27] << 8);
 
 		DBG_EMU("boot1: (%d) %02x %02x %04x", _boot, track, sector, dest);
-		seek(track, sector);
-		read(dest, BYTES_PER_SECTOR);
+		seek(&_driveA, track, sector);
+		read(&_driveA, dest, BYTES_PER_SECTOR);
 		_boot++;
 
 		if (_boot == 11) {
@@ -156,21 +162,27 @@ void Disk::on_illegal_instruction(Memory::address addr) {
 	} else if (addr == 0x3d04 || addr == 0xbd04) {
 		// $3d00 is RWTS in BOOT2, $bd00 is same, after relocation
 		Memory::address iobp = _memory[0x48] | (_memory[0x49] << 8);
-		uint8_t drive = _memory[iobp + 2];
+		uint8_t drive_id = _memory[iobp + 2];
 		uint8_t track = _memory[iobp + 4];
 		uint8_t sector = _memory[iobp + 5];
 		uint8_t cmd = _memory[iobp + 0x0c];
 		Memory::address buf = _memory[iobp + 8] | (_memory[iobp + 9] << 8);
+		DBG_EMU("boot2: cmd=%d drive=%d %02x %02x %04x", cmd, drive_id, track, sector, buf);
 
-		DBG_EMU("boot2: %d %02x %02x %04x", cmd, track, sector, buf);
-		seek(track, sector);
+		flash_file *drive = drive_id == 1? &_driveA: drive_id == 2? &_driveB: 0;
+		if (!drive || !*drive) {
+			_memory[iobp + 0x0d] = DRIVE_ERROR;
+			return;
+		}
+
+		seek(drive, track, sector);
 		if (cmd == CMD_READ)
-			read(buf, BYTES_PER_SECTOR);
+			read(drive, buf, BYTES_PER_SECTOR);
 		else if (cmd == CMD_WRITE)
-			write(buf, BYTES_PER_SECTOR);
+			write(drive, buf, BYTES_PER_SECTOR);
 		// FIXME: format?
 
-		_memory[iobp + 0x0d] = 0x00; 	// success
+		_memory[iobp + 0x0d] = NO_ERROR;
 	} else
 		DBG_EMU("sigill: unhandled %04x", addr);
 }

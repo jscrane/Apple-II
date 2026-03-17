@@ -84,7 +84,7 @@ static void flash_text() {
 }
 
 static void file_status() {
-	static const char *device_names[MAX_FILES] = { "Tape:", "A:", "B:", "C:", "D:" };
+	static const char *device_names[MAX_FILES] = { "Tape:", "A:", "B:" };
 	const char *filename = files.filename();
 	display.statusf("%s%s", device_names[files.device()], filename? filename: "No file");
 }
