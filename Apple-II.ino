@@ -118,9 +118,9 @@ static void reset(bool sd) {
 		cpu.resume();
 	});
 	machine.register_cpu_debug_handler([]() {
-		return (cpu.pc() >= 0xc600 && cpu.pc() < 0xc700)
+		return (cpu.pc() >= 0xc65c && cpu.pc() < 0xc700)
 			|| (cpu.pc() >= 0x0800 && cpu.pc() < 0x0900)
-			|| (cpu.pc() >= 0x2d00 && cpu.pc() < 0x3700);
+			|| (cpu.pc() >= 0x3000 && cpu.pc() < 0x4000);
 	});
 
 	if (!sd) {
