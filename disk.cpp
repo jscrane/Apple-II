@@ -15,6 +15,7 @@
 #define SECTORS_PER_TRACK	16
 #define MAX_TRACK	35
 
+#define CMD_SEEK	0
 #define CMD_READ	1
 #define CMD_WRITE	2
 #define CMD_FORMAT	4
@@ -126,7 +127,7 @@ uint16_t Disk::read(flash_file *drive, Memory::address addr, uint16_t bytes) {
 uint16_t Disk::write(flash_file *drive, Memory::address addr, uint16_t bytes) {
 
 	uint16_t i;
-	for (i = 0; i < bytes && drive->more(); i++)
+	for (i = 0; i < bytes; i++)
 		drive->write(_memory[addr++]);
 	return i;
 }
@@ -144,7 +145,7 @@ void Disk::on_illegal_instruction(Memory::address addr) {
 		uint8_t track = _memory[0x41];
 		Memory::address dest = _memory[0x26] | (_memory[0x27] << 8);
 
-		DBG_EMU("boot1: (%d) %02x %02x %04x", _boot, track, sector, dest);
+		DBG_DISK("boot1: (%d) %02x %02x %04x", _boot, track, sector, dest);
 		seek(_drives[0], track, sector);
 		read(_drives[0], dest, BYTES_PER_SECTOR);
 		_boot++;
@@ -171,7 +172,7 @@ void Disk::on_illegal_instruction(Memory::address addr) {
 		uint8_t sector = _memory[iobp + 0x05];
 		uint8_t cmd = _memory[iobp + 0x0c];
 		Memory::address buf = _memory[iobp + 8] | (_memory[iobp + 9] << 8);
-		DBG_EMU("boot2: cmd=%d drive=%d %02x %02x %04x", cmd, drive_id, track, sector, buf);
+		DBG_DISK("boot2: cmd=%d drive=%d %02x %02x %04x", cmd, drive_id, track, sector, buf);
 
 		flash_file *drive = _drives[drive_id-1];
 		if (!*drive) {
@@ -185,9 +186,11 @@ void Disk::on_illegal_instruction(Memory::address addr) {
 			read(drive, buf, BYTES_PER_SECTOR);
 		else if (cmd == CMD_WRITE)
 			write(drive, buf, BYTES_PER_SECTOR);
+		else if (cmd != CMD_SEEK && cmd != CMD_FORMAT)
+			DBG_DISK("unhandled command %d", cmd);
 
 		_memory[iobp + 0x0d] = NO_ERROR;
-		_memory[rwts + 0x05] = 0x18;	// clc (= success)
+		_memory[rwts + 0x05] = 0x18;		// clc (= success)
 	} else
-		DBG_EMU("sigill: unhandled %04x", addr);
+		DBG_DISK("unhandled illegal instruction: %04x", addr);
 }
