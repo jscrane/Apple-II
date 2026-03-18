@@ -185,7 +185,6 @@ void Disk::on_illegal_instruction(Memory::address addr) {
 			read(drive, buf, BYTES_PER_SECTOR);
 		else if (cmd == CMD_WRITE)
 			write(drive, buf, BYTES_PER_SECTOR);
-		// FIXME: format?
 
 		_memory[iobp + 0x0d] = NO_ERROR;
 		_memory[rwts + 0x05] = 0x18;	// clc (= success)
