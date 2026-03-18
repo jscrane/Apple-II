@@ -16,6 +16,7 @@ Programs
 
 The `data` directory contains some simple programs. Sources include:
 - [Applesoft Sampler - 680-0179-A.dsk](https://mirrors.apple2.org.za/Apple%20II%20Diskware/DOS/)
+- Disk images are from [here](https://mirrors.apple2.org.za/Apple%20II%20Diskware/DOS/)
 
 On an `esp8266`, it can be uploaded using:
 ```sh
