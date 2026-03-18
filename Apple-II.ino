@@ -6,12 +6,14 @@
 #include "screen.h"
 #include "softswitches.h"
 #include "input.h"
+#include "disk.h"
 
 Memory memory;
 r6502 cpu(memory);
 Arduino machine(cpu);
 ram<> pages[RAM_PAGES];
 flash_filer files(PROGRAMS);
+flash_file driveA(1), driveB(2);
 
 #if defined(APPLE_II)
 #include "firmware/original_monitor.h"
@@ -49,6 +51,7 @@ Display display;
 Screen screen(display);
 SoftSwitches switches;
 Input input(kbd, files);
+Disk disk(memory, driveA, driveB);
 
 #define FLASH_INTERVAL	250000
 
@@ -80,9 +83,16 @@ static void flash_text() {
 	flash_is_inverse = !flash_is_inverse;
 }
 
+static void file_status() {
+	static const char *device_names[MAX_FILES] = { "Tape:", "A:", "B:" };
+	const char *filename = files.filename();
+	display.statusf("%s%s", device_names[files.device()], filename? filename: "No file");
+}
+
 static void reset(bool sd) {
 
 	input.reset();
+	disk.reset();
 
 	switches.on_read_keyboard([]() { return input.read(); });
 	switches.on_strobe_keyboard([]() { input.strobe(); });
@@ -103,6 +113,12 @@ static void reset(bool sd) {
 
 	switches.on_access_speaker([]() { digitalWrite(PWM_SOUND, !digitalRead(PWM_SOUND)); });
 
+	machine.register_cpu_halted_handler([]() {
+		disk.on_illegal_instruction(cpu.pc());
+		cpu.resume();
+	});
+	machine.register_cpu_debug_handler([]() { return false; });
+
 	if (!sd) {
 		DBG_EMU("No SD Card");
 		display.status("No SD Card");
@@ -112,12 +128,10 @@ static void reset(bool sd) {
 	} else {
 #if defined(APPLE_II)
 		display.status("Ctrl-B: BASIC");
+#else
+		file_status();
 #endif
 	}
-}
-
-static inline void opened(const char *filename) {
-	display.status(filename? filename: "No file");
 }
 
 static void function_key(uint8_t fn) {
@@ -125,20 +139,24 @@ static void function_key(uint8_t fn) {
 	switch (fn) {
 	case 1:
 		machine.reset();
-		break;
+		return;
 	case 2:
-		opened(files.advance());
+		files.advance();
 		break;
 	case 3:
-		opened(files.rewind());
+		files.rewind();
 		break;
 	case 5:
 		input.load();
+		return;
+	case 8:
+		files.next_device();
 		break;
 	case 10:
 		machine.debug_cpu();
-		break;
+		return;
 	}
+	file_status();
 }
 
 void setup() {
@@ -155,10 +173,11 @@ void setup() {
 
 #if defined(USE_SPIRAM)
 	DBG_INI("SpiRAM: %dkB at 0x%04x", SPIRAM_EXTENT * Memory::page_size / 1024, SPIRAM_BASE);
-	memory.put(sram, SPIRAM_BASE, SPIRAM_EXTENT);
+	memory.put(sram, SPIRAM_BASE, SPIRAM_EXTENT * Memory::page_size);
 #endif
 
 	memory.put(switches, 0xc000);
+	memory.put(disk.bootprom, 0xc600);
 	memory.put(monitor, 0xf800);
 
 #if defined(APPLE_II)

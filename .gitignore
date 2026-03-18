@@ -4,3 +4,5 @@
 *.cpp.d
 *.txt.mk
 serialout.txt
+littlefs.img
+roms/
