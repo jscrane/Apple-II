@@ -8,7 +8,7 @@ Keyboard
 - F2 (^O): advance to next file on current device
 - F3 (^P): rewind current device
 - F5 (^R): load program from tape (by simulating typing it)
-- F8 (^U): select destination device (Tape, A:, B:, C:, D:)
+- F8 (^U): select destination device (Tape, A:, B:)
 - F10(^W): watch CPU execute instructions (if debugging enabled)
 
 Programs
