@@ -161,17 +161,19 @@ void Disk::on_illegal_instruction(Memory::address addr) {
 		}
 	} else if (addr == 0x3d04 || addr == 0xbd04) {
 		// $3d00 is RWTS in BOOT2, $bd00 is same, after relocation
+		Memory::address rwts = (addr & 0xff00);
 		Memory::address iobp = _memory[0x48] | (_memory[0x49] << 8);
-		uint8_t drive_id = _memory[iobp + 2];
-		uint8_t track = _memory[iobp + 4];
-		uint8_t sector = _memory[iobp + 5];
+		uint8_t drive_id = _memory[iobp + 0x02];
+		uint8_t track = _memory[iobp + 0x04];
+		uint8_t sector = _memory[iobp + 0x05];
 		uint8_t cmd = _memory[iobp + 0x0c];
 		Memory::address buf = _memory[iobp + 8] | (_memory[iobp + 9] << 8);
 		DBG_EMU("boot2: cmd=%d drive=%d %02x %02x %04x", cmd, drive_id, track, sector, buf);
 
-		flash_file *drive = drive_id == 1? &_driveA: drive_id == 2? &_driveB: 0;
-		if (!drive || !*drive) {
-			_memory[iobp + 0x0d] = DRIVE_ERROR;
+		flash_file *drive = drive_id == 1? &_driveA: &_driveB;
+		if (!*drive) {
+			_memory[iobp + 0x0d] = READ_ERROR;
+			_memory[rwts + 0x05] = 0x38;	// sec (= error)
 			return;
 		}
 
@@ -183,6 +185,7 @@ void Disk::on_illegal_instruction(Memory::address addr) {
 		// FIXME: format?
 
 		_memory[iobp + 0x0d] = NO_ERROR;
+		_memory[rwts + 0x05] = 0x18;	// clc (= success)
 	} else
 		DBG_EMU("sigill: unhandled %04x", addr);
 }
