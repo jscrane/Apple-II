@@ -100,7 +100,9 @@ static const uint8_t diskboot[] PROGMEM = {
 	0x4c, 0x01, 0x08,	// jmp BOOT1+1
 };
 
-Disk::Disk(Memory &memory, flash_file &driveA, flash_file &driveB): bootprom(diskboot, sizeof(diskboot)), _memory(memory), _driveA(driveA), _driveB(driveB) {
+Disk::Disk(Memory &memory, flash_file &driveA, flash_file &driveB): bootprom(diskboot, sizeof(diskboot)), _memory(memory) {
+	_drives[0] = &driveA;
+	_drives[1] = &driveB;
 }
 
 void Disk::reset() {
@@ -142,8 +144,8 @@ void Disk::on_illegal_instruction(Memory::address addr) {
 		Memory::address dest = _memory[0x26] | (_memory[0x27] << 8);
 
 		DBG_EMU("boot1: (%d) %02x %02x %04x", _boot, track, sector, dest);
-		seek(&_driveA, track, sector);
-		read(&_driveA, dest, BYTES_PER_SECTOR);
+		seek(_drives[0], track, sector);
+		read(_drives[0], dest, BYTES_PER_SECTOR);
 		_boot++;
 
 		if (_boot == 11) {
@@ -170,7 +172,7 @@ void Disk::on_illegal_instruction(Memory::address addr) {
 		Memory::address buf = _memory[iobp + 8] | (_memory[iobp + 9] << 8);
 		DBG_EMU("boot2: cmd=%d drive=%d %02x %02x %04x", cmd, drive_id, track, sector, buf);
 
-		flash_file *drive = drive_id == 1? &_driveA: &_driveB;
+		flash_file *drive = _drives[drive_id-1];
 		if (!*drive) {
 			_memory[iobp + 0x0d] = READ_ERROR;
 			_memory[rwts + 0x05] = 0x38;	// sec (= error)

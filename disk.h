@@ -14,6 +14,6 @@ private:
 	uint16_t write(flash_file *drive, Memory::address from, uint16_t bytes);
 
 	Memory &_memory;
-	flash_file &_driveA, &_driveB;
+	flash_file *_drives[2];
 	uint8_t _boot;
 };
