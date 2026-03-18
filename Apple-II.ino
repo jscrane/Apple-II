@@ -117,11 +117,7 @@ static void reset(bool sd) {
 		disk.on_illegal_instruction(cpu.pc());
 		cpu.resume();
 	});
-//	machine.register_cpu_debug_handler([]() {
-//		return (cpu.pc() >= 0xc65c && cpu.pc() < 0xc700)
-//			|| (cpu.pc() >= 0x0800 && cpu.pc() < 0x0900)
-//			|| (cpu.pc() >= 0x3000 && cpu.pc() < 0x4000);
-//	});
+	machine.register_cpu_debug_handler([]() { return false; });
 
 	if (!sd) {
 		DBG_EMU("No SD Card");
