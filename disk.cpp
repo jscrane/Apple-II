@@ -163,10 +163,10 @@ void Disk::on_illegal_instruction(Memory::address addr) {
 			_memory[STATUS] = 0x01;		// error: abort
 			return;
 		}
+		_memory[STATUS] = 0x00;
 		seek(drive, track, sector);
 		read(drive, data_ptr, BYTES_PER_SECTOR);
 		_boot++;
-		_memory[STATUS] = 0x00;
 
 		if (_boot == 11) {
 			// now we've read the first sector (BOOT0) _and_
@@ -194,7 +194,7 @@ void Disk::on_illegal_instruction(Memory::address addr) {
 
 		flash_file *drive = _drives[drive_id-1];
 		if (!*drive) {
-			_memory[iobp + 0x0d] = READ_ERROR;
+			_memory[iobp + 0x0d] = DRIVE_ERROR;
 			_memory[rwts + 0x05] = 0x38;	// sec (= error)
 			return;
 		}
