@@ -202,6 +202,7 @@ void Disk::on_illegal_instruction(Memory::address addr) {
 		}
 		if (vol != 0 && vol != _vols[drive_id]) {
 			_memory[iobp + 0x0d] = VOLUME_ERROR;
+			_memory[iobp + 0x0e] = _vols[drive_id];
 			_memory[rwts + 0x05] = 0x38;	// sec (= error)
 			return;
 		}
