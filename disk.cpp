@@ -22,7 +22,7 @@
 
 #define NO_ERROR	0x00
 #define WRITE_PROTECT	0x10
-#define BAD_VOLUME	0x20
+#define VOLUME_ERROR	0x20
 #define DRIVE_ERROR	0x40
 #define READ_ERROR	0x80
 
@@ -101,7 +101,7 @@ static const uint8_t diskboot[] PROGMEM = {
 	0x02,			// illegal instruction
 	0xa5, STATUS,		// lda status
 	0xd0, 0x10,		// bne :abort
-	0xe6, 0x27,		// inc data_ptr+1
+	0xe6, DATAPTR+1,	// inc data_ptr+1
 	0xe6, SECTOR,		// inc sector
 	0xa5, SECTOR,		// lda sector
 	0xcd, 0x00, 0x08,	// cmp BOOT1
@@ -185,29 +185,42 @@ void Disk::on_illegal_instruction(Memory::address addr) {
 		// $3d00 is RWTS in BOOT2, $bd00 is same, after relocation
 		Memory::address rwts = (addr & 0xff00);
 		Memory::address iobp = _memory[IOBP] | (_memory[IOBP+1] << 8);
-		uint8_t drive_id = _memory[iobp + 0x02];
+		uint8_t drive_id = _memory[iobp + 0x02] - 1;
+		uint8_t vol = _memory[iobp + 0x03];
 		uint8_t track = _memory[iobp + 0x04];
 		uint8_t sector = _memory[iobp + 0x05];
 		uint8_t cmd = _memory[iobp + 0x0c];
 		Memory::address buf = _memory[iobp + 8] | (_memory[iobp + 9] << 8);
-		DBG_DISK("boot2: cmd=%d drive=%d %02x %02x %04x", cmd, drive_id, track, sector, buf);
+		DBG_DISK("boot2: cmd=%d drive=%d vol=%d %02x %02x %04x", cmd, drive_id, vol, track, sector, buf);
 
-		flash_file *drive = _drives[drive_id-1];
+		flash_file *drive = _drives[drive_id];
 		if (!*drive) {
 			_memory[iobp + 0x0d] = DRIVE_ERROR;
 			_memory[rwts + 0x05] = 0x38;	// sec (= error)
 			return;
 		}
+		if (vol != 0 && vol != _vols[drive_id]) {
+			_memory[iobp + 0x0d] = VOLUME_ERROR;
+			_memory[rwts + 0x05] = 0x38;	// sec (= error)
+			return;
+		}
 
 		seek(drive, track, sector);
-		if (cmd == CMD_READ)
+		if (cmd == CMD_READ) {
 			read(drive, buf, BYTES_PER_SECTOR);
-		else if (cmd == CMD_WRITE)
+			if (track == 17 && sector == 0)
+				_vols[drive_id] = _memory[buf + 6];
+
+		} else if (cmd == CMD_WRITE) {
+			if (track == 17 && sector == 0)
+				_vols[drive_id] = _memory[buf + 6];
 			write(drive, buf, BYTES_PER_SECTOR);
-		else if (cmd != CMD_SEEK && cmd != CMD_FORMAT)
+
+		} else if (cmd != CMD_SEEK && cmd != CMD_FORMAT)
 			DBG_DISK("unhandled command %d", cmd);
 
 		_memory[iobp + 0x0d] = NO_ERROR;
+		_memory[iobp + 0x0e] = _vols[drive_id];
 		_memory[rwts + 0x05] = 0x18;		// clc (= success)
 	} else
 		DBG_DISK("unhandled illegal instruction: %04x", addr);
