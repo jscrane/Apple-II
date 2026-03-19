@@ -112,7 +112,9 @@ static const uint8_t diskboot[] PROGMEM = {
 	0x4c, 0x00, 0xe0,	// jmp $e000
 };
 
-Disk::Disk(Memory &memory, flash_file &driveA, flash_file &driveB): bootprom(diskboot, sizeof(diskboot)), _memory(memory) {
+Disk::Disk(uint8_t slot, Memory &memory, flash_file &driveA, flash_file &driveB):
+	bootprom(diskboot, sizeof(diskboot)), _memory(memory), _base(0xc000 + slot * 0x100)
+{
 	_drives[0] = &driveA;
 	_drives[1] = &driveB;
 }
@@ -149,7 +151,7 @@ static const uint8_t reverse_sector_map[] = {
 
 void Disk::on_illegal_instruction(Memory::address addr) {
 
-	if (addr == 0xc65c) {
+	if (addr == _base + 0x5c) {
 		// ROM address (BOOT0)
 		uint8_t sector = reverse_sector_map[_memory[SECTOR]];
 		uint8_t track = _memory[TRACK];

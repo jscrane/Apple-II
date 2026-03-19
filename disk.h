@@ -2,7 +2,7 @@
 
 class Disk {
 public:
-	Disk(Memory &memory, flash_file &driveA, flash_file &driveB);
+	Disk(uint8_t slot, Memory &memory, flash_file &driveA, flash_file &driveB);
 	void reset();
 
 	prom bootprom;
@@ -16,4 +16,5 @@ private:
 	Memory &_memory;
 	flash_file *_drives[2];
 	uint8_t _boot;
+	const Memory::address _base;
 };

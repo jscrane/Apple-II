@@ -51,7 +51,7 @@ Display display;
 Screen screen(display);
 SoftSwitches switches;
 Input input(kbd, files);
-Disk disk(memory, driveA, driveB);
+Disk disk(DISK_SLOT, memory, driveA, driveB);
 
 #define FLASH_INTERVAL	250000
 
