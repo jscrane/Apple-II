@@ -29,13 +29,19 @@
 // see https://gswv.apple2.org.za/a2zine/GS.WorldView/Resources/DOS.3.3.ANATOMY/BOOT.PROCESS.txt
 // https://htmlpreview.github.io/?https://github.com/Michaelangel007/apple2_dos33/blob/master/dos33.html
 
+// zpage locations
+#define TRACK	0x41
+#define SECTOR	0x3d
+#define DATAPTR	0x26
+#define STATUS	0x48	// used to return error in BOOT0 if no disk present
+#define IOBP	0x48
+
 // the disk is accessed for the first time with PR #6 "permanent redirect to slot #6"
 static const uint8_t diskboot[] PROGMEM = {
 
 	// .org $c600
 	// https://6502disassembly.com/a2-rom/C600ROM.html
-	0xea, 0xea,		// don't autostart
-	//0xa2, 0x20,		// ldx #$20
+	0xa2, 0x20,		// ldx #$20
 	0xa0, 0x00,		// ldy #$00
 	0xa2, 0x03,		// ldx #$03
 				// CreateDecTabLoop
@@ -84,22 +90,26 @@ static const uint8_t diskboot[] PROGMEM = {
 	0xea, 0xea, 0xea,
 	0xea,
 	0xa9, 0x00,		// lda #$00 (was bpl :seek_loop)
-	0x85, 0x26,		// sta data_ptr
-	0x85, 0x3d,		// sta sector
-	0x85, 0x41,		// sta track
+	0x85, DATAPTR,		// sta data_ptr
+	0x85, SECTOR,		// sta sector
+	0x85, TRACK,		// sta track
 	0xa9, 0x08,		// lda #>BOOT1
-	0x85, 0x27,		// sta data_ptr+1
+	0x85, DATAPTR+1,	// sta data_ptr+1
 
 	// .org $c65c ReadSector
 				// :another
 	0x02,			// illegal instruction
+	0xa5, STATUS,		// lda status
+	0xd0, 0x10,		// bne :abort
 	0xe6, 0x27,		// inc data_ptr+1
-	0xe6, 0x3d,		// inc sector
-	0xa5, 0x3d,		// lda sector
+	0xe6, SECTOR,		// inc sector
+	0xa5, SECTOR,		// lda sector
 	0xcd, 0x00, 0x08,	// cmp BOOT1
 	0xa6, 0x2b,		// ldx slot_index
 	0x90, 0xf3,		// bcc :another
 	0x4c, 0x01, 0x08,	// jmp BOOT1+1
+				// :abort
+	0x4c, 0x00, 0xe0,	// jmp $e000
 };
 
 Disk::Disk(Memory &memory, flash_file &driveA, flash_file &driveB): bootprom(diskboot, sizeof(diskboot)), _memory(memory) {
@@ -141,14 +151,20 @@ void Disk::on_illegal_instruction(Memory::address addr) {
 
 	if (addr == 0xc65c) {
 		// ROM address (BOOT0)
-		uint8_t sector = reverse_sector_map[_memory[0x3d]];
-		uint8_t track = _memory[0x41];
-		Memory::address dest = _memory[0x26] | (_memory[0x27] << 8);
+		uint8_t sector = reverse_sector_map[_memory[SECTOR]];
+		uint8_t track = _memory[TRACK];
+		Memory::address data_ptr = _memory[DATAPTR] | (_memory[DATAPTR+1] << 8);
 
-		DBG_DISK("boot1: (%d) %02x %02x %04x", _boot, track, sector, dest);
-		seek(_drives[0], track, sector);
-		read(_drives[0], dest, BYTES_PER_SECTOR);
+		DBG_DISK("boot1: (%d) %02x %02x %04x", _boot, track, sector, data_ptr);
+		flash_file *drive = _drives[0];
+		if (!*drive) {
+			_memory[STATUS] = 0x01;		// error: abort
+			return;
+		}
+		seek(drive, track, sector);
+		read(drive, data_ptr, BYTES_PER_SECTOR);
 		_boot++;
+		_memory[STATUS] = 0x00;
 
 		if (_boot == 11) {
 			// now we've read the first sector (BOOT0) _and_
@@ -166,7 +182,7 @@ void Disk::on_illegal_instruction(Memory::address addr) {
 	} else if (addr == 0x3d04 || addr == 0xbd04) {
 		// $3d00 is RWTS in BOOT2, $bd00 is same, after relocation
 		Memory::address rwts = (addr & 0xff00);
-		Memory::address iobp = _memory[0x48] | (_memory[0x49] << 8);
+		Memory::address iobp = _memory[IOBP] | (_memory[IOBP+1] << 8);
 		uint8_t drive_id = _memory[iobp + 0x02];
 		uint8_t track = _memory[iobp + 0x04];
 		uint8_t sector = _memory[iobp + 0x05];
