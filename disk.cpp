@@ -112,11 +112,11 @@ static const uint8_t diskboot[] PROGMEM = {
 	0x4c, 0x00, 0xe0,	// jmp $e000
 };
 
-Disk::Disk(uint8_t slot, Memory &memory, flash_file &driveA, flash_file &driveB):
+Disk::Disk(uint8_t slot, Memory &memory, flash_file &drive1, flash_file &drive2):
 	bootprom(diskboot, sizeof(diskboot)), _memory(memory), _base(0xc000 + slot * 0x100)
 {
-	_drives[0] = &driveA;
-	_drives[1] = &driveB;
+	_drives[0] = &drive1;
+	_drives[1] = &drive2;
 }
 
 void Disk::reset() {

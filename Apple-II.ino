@@ -13,7 +13,7 @@ r6502 cpu(memory);
 Arduino machine(cpu);
 ram<> pages[RAM_PAGES];
 flash_filer files(PROGRAMS);
-flash_file driveA(1), driveB(2);
+flash_file drive1(1), drive2(2);
 
 #if defined(APPLE_II)
 #include "firmware/original_monitor.h"
@@ -51,7 +51,7 @@ Display display;
 Screen screen(display);
 SoftSwitches switches;
 Input input(kbd, files);
-Disk disk(DISK_SLOT, memory, driveA, driveB);
+Disk disk(DISK_SLOT, memory, drive1, drive2);
 
 #define FLASH_INTERVAL	250000
 
@@ -84,7 +84,7 @@ static void flash_text() {
 }
 
 static void file_status() {
-	static const char *device_names[MAX_FILES] = { "Tape:", "A:", "B:" };
+	static const char *device_names[MAX_FILES] = { "Tape:", "D1:", "D2:" };
 	const char *filename = files.filename();
 	display.statusf("%s%s", device_names[files.device()], filename? filename: "No file");
 }
