@@ -35,6 +35,7 @@
 #define DATAPTR	0x26
 #define STATUS	0x48	// used to return error in BOOT0 if no disk present
 #define IOBP	0x48
+#define SLOTIDX	0x2b
 
 // the disk is accessed for the first time with PR #6 "permanent redirect to slot #6"
 static const uint8_t diskboot[] PROGMEM = {
@@ -70,7 +71,7 @@ static const uint8_t diskboot[] PROGMEM = {
 	0x0a,			// asl A
 	0x0a,			// asl A
 	0x0a,			// asl A
-	0x85, 0x2b,		// sta slot_index
+	0x85, SLOTIDX,		// sta slot_index
 	0xaa,			// tax
 	0xbd, 0x8e, 0xc0,	// lda IWM_Q7_OFF,x
 	0xbd, 0x8c, 0xc0,	// lda IWM_Q6_OFF,x
@@ -105,7 +106,7 @@ static const uint8_t diskboot[] PROGMEM = {
 	0xe6, SECTOR,		// inc sector
 	0xa5, SECTOR,		// lda sector
 	0xcd, 0x00, 0x08,	// cmp BOOT1
-	0xa6, 0x2b,		// ldx slot_index
+	0xa6, SLOTIDX,		// ldx slot_index
 	0x90, 0xf3,		// bcc :another
 	0x4c, 0x01, 0x08,	// jmp BOOT1+1
 				// :abort
