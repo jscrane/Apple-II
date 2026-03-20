@@ -101,9 +101,9 @@ static void reset(bool sd) {
 		if (show_page2) {
 			memory.put(pages[1], 0x0400);
 			memory.put(screen, 0x0800);
-			screen.show(pages[2]);
+			screen.show_page(pages[2]);
 		} else {
-			screen.show(pages[1]);
+			screen.show_page(pages[1]);
 			memory.put(screen, 0x0400);
 			memory.put(pages[2], 0x0800);
 		}

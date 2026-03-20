@@ -34,9 +34,8 @@ Memory::address Screen::to_address(uint8_t row) {
 	return ((row & 7) << 7) | ((row & 24) * 5);
 }
 
-void Screen::show(ram<N> &r) {
+void Screen::on_page_change() {
 
-	_ram = &r;
 	_flashrows = 0;
 
 	uint32_t bit = 1;
@@ -50,9 +49,7 @@ void Screen::show(ram<N> &r) {
 	}
 }
 
-void Screen::set(uint8_t c) {
-
-	_ram->set(_acc, c);
+void Screen::on_set(uint8_t c) {
 
 	uint8_t row, col;
 	if (from_address(_acc, row, col)) {
