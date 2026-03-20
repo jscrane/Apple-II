@@ -51,15 +51,40 @@ private:
 	bool _top_text, _btm_text;
 };
 
-enum class Resolutions { LORES, TEXT };
+class Hires: public Resolution<8192> {
+public:
+	Hires(Display &display): _display(display) {}
+
+	void redraw(uint8_t rowstart, uint8_t rowend);
+private:
+	void on_page_change() override;
+
+	void on_set(uint8_t) override;
+
+	Display &_display;
+};
+
+enum class Resolutions { LORES, TEXT, HIRES };
 
 class Screen {
 public:
-	Screen(Display &display): lores(display) {}
+	Screen(Display &display): lores(display), hires(display) {}
 
 	Lores lores;
 
-	void redraw_top(Resolutions res) { lores.redraw(0, SPLIT_LINE, res == Resolutions::TEXT); }
+	Hires hires;
 
-	void redraw_btm(Resolutions res) { lores.redraw(SPLIT_LINE, SCREEN_LINES, res == Resolutions::TEXT); }
+	void redraw_top(Resolutions res) {
+		if (res == Resolutions::HIRES)
+			hires.redraw(0, SPLIT_LINE);
+		else
+			lores.redraw(0, SPLIT_LINE, res == Resolutions::TEXT);
+	}
+
+	void redraw_btm(Resolutions res) {
+		if (res == Resolutions::HIRES)
+			hires.redraw(SPLIT_LINE, SCREEN_LINES);
+		else
+			lores.redraw(SPLIT_LINE, SCREEN_LINES, res == Resolutions::TEXT);
+	}
 };
