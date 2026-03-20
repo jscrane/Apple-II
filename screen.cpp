@@ -16,7 +16,7 @@ inline bool is_inverse(uint8_t b) { return b < 0x40; }
 
 inline bool is_top(uint8_t row) { return row < SPLIT_LINE; }
 
-bool Screen::from_address(Memory::address a, uint8_t &row, uint8_t &col) {
+bool Lores::from_address(Memory::address a, uint8_t &row, uint8_t &col) {
 
 	uint8_t x = (a % 128);
 	if (x >= 120)	// "screen hole"?
@@ -29,12 +29,12 @@ bool Screen::from_address(Memory::address a, uint8_t &row, uint8_t &col) {
 	return true;
 }
 
-Memory::address Screen::to_address(uint8_t row) {
+Memory::address Lores::to_address(uint8_t row) {
 
 	return ((row & 7) << 7) | ((row & 24) * 5);
 }
 
-void Screen::on_page_change() {
+void Lores::on_page_change() {
 
 	_flashrows = 0;
 
@@ -49,7 +49,7 @@ void Screen::on_page_change() {
 	}
 }
 
-void Screen::on_set(uint8_t c) {
+void Lores::on_set(uint8_t c) {
 
 	uint8_t row, col;
 	if (from_address(_acc, row, col)) {
@@ -64,7 +64,7 @@ void Screen::on_set(uint8_t c) {
 	}
 }
 
-void Screen::redraw(uint8_t rowstart, uint8_t rowend, bool as_text) {
+void Lores::redraw(uint8_t rowstart, uint8_t rowend, bool as_text) {
 
 	DBG_DSP("redraw: %d %d", rowstart, rowend);
 
@@ -81,7 +81,7 @@ void Screen::redraw(uint8_t rowstart, uint8_t rowend, bool as_text) {
 	}
 }
 
-void Screen::draw_lores(uint8_t row, uint8_t col, uint8_t c) {
+void Lores::draw_lores(uint8_t row, uint8_t col, uint8_t c) {
 
 	static uint16_t colours[] = {
 		0x0000, 0xc197, 0x0014, 0xc1ff, 0x0029, 0x8410, 0x0019, 0x24ff,
@@ -92,7 +92,7 @@ void Screen::draw_lores(uint8_t row, uint8_t col, uint8_t c) {
 	_display.fillRect(CHAR_WIDTH*col+1, CHAR_HEIGHT*row+4, CHAR_WIDTH, CHAR_HEIGHT / 2, colours[c >> 4]);
 }
 
-void Screen::draw_text(uint8_t row, uint8_t col, uint8_t c) {
+void Lores::draw_text(uint8_t row, uint8_t col, uint8_t c) {
 
 	uint16_t cc = CHAR_HEIGHT * (c & 0x3f);
 	uint16_t xc = col * CHAR_WIDTH, yc = row * CHAR_HEIGHT;
@@ -108,7 +108,7 @@ void Screen::draw_text(uint8_t row, uint8_t col, uint8_t c) {
 	}
 }
 
-void Screen::flash_text(bool flash_is_inverse) {
+void Lores::flash_text(bool flash_is_inverse) {
 
 	uint8_t rowstart = _top_text? 0: SPLIT_LINE;
 	uint8_t rowend = _btm_text? SCREEN_LINES: SPLIT_LINE;

@@ -24,9 +24,9 @@ protected:
 	ram<N> *_ram;
 };
 
-class Screen: public Resolution<1024> {
+class Lores: public Resolution<1024> {
 public:
-	Screen(Display &display): _display(display) {}
+	Lores(Display &display): _display(display) {}
 
 	void redraw_top(bool as_text) { _top_text = as_text; redraw(0, SPLIT_LINE, as_text); }
 
