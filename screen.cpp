@@ -68,6 +68,9 @@ void Lores::redraw(uint8_t rowstart, uint8_t rowend, bool as_text) {
 
 	DBG_DSP("redraw: %d %d", rowstart, rowend);
 
+	if (is_top(rowstart)) _top_text = as_text;
+	else _btm_text = as_text;
+
 	for (uint8_t row = rowstart; row < rowend; row++) {
 		Memory::address rowaddr = to_address(row);
 		for (uint8_t col = 0; col < CHARS_PER_LINE; col++) {

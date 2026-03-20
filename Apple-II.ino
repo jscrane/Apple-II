@@ -48,7 +48,7 @@ ps2_serial_kbd kbd;
 #endif
 
 Display display;
-Lores lores(display);
+Screen screen(display);
 SoftSwitches switches;
 Input input(kbd, files);
 Disk disk(DISK_SLOT, memory, drive1, drive2);
@@ -66,10 +66,10 @@ static void set_screen() {
 
 	uint8_t diff = state ^ last_state;
 	if ((diff & 4) || (diff & 1))
-		lores.redraw_top(top_text);
+		screen.redraw_top(top_text);
 
 	if ((diff & 4) || (diff & 2))
-		lores.redraw_btm(btm_text);
+		screen.redraw_btm(btm_text);
 	last_state = state;
 }
 
@@ -78,7 +78,7 @@ static void flash_text() {
 	static bool flash_is_inverse;
 
 	if (switches.is_text() || switches.is_mixed())
-		lores.flash_text(flash_is_inverse);
+		screen.lores.flash_text(flash_is_inverse);
 
 	flash_is_inverse = !flash_is_inverse;
 }
@@ -100,11 +100,11 @@ static void reset(bool sd) {
 	switches.on_access_page([](bool show_page2) {
 		if (show_page2) {
 			memory.put(pages[1], 0x0400);
-			memory.put(lores, 0x0800);
-			lores.show_page(pages[2]);
+			memory.put(screen.lores, 0x0800);
+			screen.lores.show_page(pages[2]);
 		} else {
-			lores.show_page(pages[1]);
-			memory.put(lores, 0x0400);
+			screen.lores.show_page(pages[1]);
+			memory.put(screen.lores, 0x0400);
 			memory.put(pages[2], 0x0800);
 		}
 	});

@@ -28,17 +28,13 @@ class Lores: public Resolution<1024> {
 public:
 	Lores(Display &display): _display(display) {}
 
-	void redraw_top(bool as_text) { _top_text = as_text; redraw(0, SPLIT_LINE, as_text); }
-
-	void redraw_btm(bool as_text) { _btm_text = as_text; redraw(SPLIT_LINE, SCREEN_LINES, as_text); }
-
 	void flash_text(bool flash_is_inverse);
+
+	void redraw(uint8_t rowstart, uint8_t rowend, bool as_text);
 private:
 	void on_page_change() override;
 
 	void on_set(uint8_t) override;
-
-	void redraw(uint8_t, uint8_t, bool);
 
 	void draw_text(uint8_t, uint8_t, uint8_t);
 
@@ -53,4 +49,15 @@ private:
 	Display &_display;
 
 	bool _top_text, _btm_text;
+};
+
+class Screen {
+public:
+	Screen(Display &display): lores(display) {}
+
+	Lores lores;
+
+	void redraw_top(bool as_text) { lores.redraw(0, SPLIT_LINE, as_text); }
+
+	void redraw_btm(bool as_text) { lores.redraw(SPLIT_LINE, SCREEN_LINES, as_text); }
 };
