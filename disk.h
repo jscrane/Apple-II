@@ -15,6 +15,7 @@ private:
 
 	Memory &_memory;
 	flash_file *_drives[2];
+	uint8_t _vols[2];
 	uint8_t _boot;
 	const Memory::address _base;
 };
