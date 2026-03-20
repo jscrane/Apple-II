@@ -66,10 +66,10 @@ static void set_screen() {
 
 	uint8_t diff = state ^ last_state;
 	if ((diff & 4) || (diff & 1))
-		screen.redraw_top(top_text);
+		screen.redraw_top(top_text? Resolutions::TEXT: Resolutions::LORES);
 
 	if ((diff & 4) || (diff & 2))
-		screen.redraw_btm(btm_text);
+		screen.redraw_btm(btm_text? Resolutions::TEXT: Resolutions::LORES);
 	last_state = state;
 }
 

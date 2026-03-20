@@ -51,13 +51,15 @@ private:
 	bool _top_text, _btm_text;
 };
 
+enum class Resolutions { LORES, TEXT };
+
 class Screen {
 public:
 	Screen(Display &display): lores(display) {}
 
 	Lores lores;
 
-	void redraw_top(bool as_text) { lores.redraw(0, SPLIT_LINE, as_text); }
+	void redraw_top(Resolutions res) { lores.redraw(0, SPLIT_LINE, res == Resolutions::TEXT); }
 
-	void redraw_btm(bool as_text) { lores.redraw(SPLIT_LINE, SCREEN_LINES, as_text); }
+	void redraw_btm(Resolutions res) { lores.redraw(SPLIT_LINE, SCREEN_LINES, res == Resolutions::TEXT); }
 };
