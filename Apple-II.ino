@@ -59,18 +59,18 @@ Disk disk(DISK_SLOT, memory, drive1, drive2);
 static void on_screen_change() {
 
 	static uint8_t last_state;
-	bool text = switches.is_text(), mixed = switches.is_mixed();
+	bool text = switches.is_text(), mixed = switches.is_mixed(), hires = switches.is_hires();
 	bool top_text = text, btm_text = text || mixed;
-	uint8_t state = (switches.is_page2() << 2) | (btm_text << 1) | top_text;
+	uint8_t state = (hires << 3) | (switches.is_page2() << 2) | (btm_text << 1) | top_text;
 
 	if (state == last_state) return;
 
 	uint8_t diff = state ^ last_state;
-	if ((diff & 4) || (diff & 1))
-		screen.redraw_top(top_text? Resolutions::TEXT: Resolutions::LORES);
+	if ((diff & 8) || (diff & 4) || (diff & 1))
+		screen.redraw_top(top_text, hires);
 
-	if ((diff & 4) || (diff & 2))
-		screen.redraw_btm(btm_text? Resolutions::TEXT: Resolutions::LORES);
+	if ((diff & 8) || (diff & 4) || (diff & 2))
+		screen.redraw_btm(btm_text, hires);
 	last_state = state;
 }
 

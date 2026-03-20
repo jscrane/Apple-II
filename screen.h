@@ -64,8 +64,6 @@ private:
 	Display &_display;
 };
 
-enum class Resolutions { LORES, TEXT, HIRES };
-
 class Screen {
 public:
 	Screen(Display &display): lores(display), hires(display) {}
@@ -74,17 +72,21 @@ public:
 
 	Hires hires;
 
-	void redraw_top(Resolutions res) {
-		if (res == Resolutions::HIRES)
+	void redraw_top(bool text, bool res) {
+		if (text)
+			lores.redraw(0, SPLIT_LINE, true);
+		else if (res)
 			hires.redraw(0, SPLIT_LINE);
 		else
-			lores.redraw(0, SPLIT_LINE, res == Resolutions::TEXT);
+			lores.redraw(0, SPLIT_LINE, false);
 	}
 
-	void redraw_btm(Resolutions res) {
-		if (res == Resolutions::HIRES)
+	void redraw_btm(bool text, bool res) {
+		if (text)
+			lores.redraw(SPLIT_LINE, SCREEN_LINES, true);
+		else if (res)
 			hires.redraw(SPLIT_LINE, SCREEN_LINES);
 		else
-			lores.redraw(SPLIT_LINE, SCREEN_LINES, res == Resolutions::TEXT);
+			lores.redraw(SPLIT_LINE, SCREEN_LINES, false);
 	}
 };
