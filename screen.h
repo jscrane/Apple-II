@@ -64,29 +64,20 @@ private:
 	Display &_display;
 };
 
+class SoftSwitches;
+
 class Screen {
 public:
-	Screen(Display &display): lores(display), hires(display) {}
+	Screen(Display &display, SoftSwitches &switches): lores(display), hires(display), _switches(switches), _state(0) {}
 
 	Lores lores;
 
 	Hires hires;
 
-	void redraw_top(bool text, bool res) {
-		if (text)
-			lores.redraw(0, SPLIT_LINE, true);
-		else if (res)
-			hires.redraw(0, SPLIT_LINE);
-		else
-			lores.redraw(0, SPLIT_LINE, false);
-	}
+	void on_mode_change();
 
-	void redraw_btm(bool text, bool res) {
-		if (text)
-			lores.redraw(SPLIT_LINE, SCREEN_LINES, true);
-		else if (res)
-			hires.redraw(SPLIT_LINE, SCREEN_LINES);
-		else
-			lores.redraw(SPLIT_LINE, SCREEN_LINES, false);
-	}
+private:
+	SoftSwitches &_switches;
+
+	uint8_t _state;
 };

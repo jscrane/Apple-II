@@ -6,7 +6,6 @@
 #include <debugging.h>
 #include <ram.h>
 
-#include "config.h"
 #include "screen.h"
 
 void Hires::on_page_change() {

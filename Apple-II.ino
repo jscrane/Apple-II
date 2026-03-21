@@ -11,8 +11,8 @@
 Memory memory;
 r6502 cpu(memory);
 Arduino machine(cpu);
-ram<> pages[RAM_PAGES-16];
-ram<8192> hires_page1, hires_page2;
+ram<1024> pages[RAM_PAGES-16];
+ram<8192> hgr_page1, hgr_page2;
 flash_filer files(PROGRAMS);
 flash_file drive1(1), drive2(2);
 
@@ -25,6 +25,7 @@ prom monitor(original_monitor, sizeof(original_monitor));
 prom basic1(integer_basic1, sizeof(integer_basic1));
 prom basic2(integer_basic2, sizeof(integer_basic2));
 prom basic3(integer_basic3, sizeof(integer_basic3));
+
 #elif defined(APPLE_II_PLUS)
 #include "firmware/autostart_monitor.h"
 #include "firmware/applesoft_basic1.h"
@@ -49,52 +50,34 @@ ps2_serial_kbd kbd;
 #endif
 
 Display display;
-Screen screen(display);
 SoftSwitches switches;
+Screen screen(display, switches);
 Input input(kbd, files);
 Disk disk(DISK_SLOT, memory, drive1, drive2);
 
 #define FLASH_INTERVAL	250000
 
-static void on_screen_change() {
-
-	static uint8_t last_state;
-	bool text = switches.is_text(), mixed = switches.is_mixed(), hires = switches.is_hires();
-	bool top_text = text, btm_text = text || mixed;
-	uint8_t state = (hires << 3) | (switches.is_page2() << 2) | (btm_text << 1) | top_text;
-
-	if (state == last_state) return;
-
-	uint8_t diff = state ^ last_state;
-	if ((diff & 8) || (diff & 4) || (diff & 1))
-		screen.redraw_top(top_text, hires);
-
-	if ((diff & 8) || (diff & 4) || (diff & 2))
-		screen.redraw_btm(btm_text, hires);
-	last_state = state;
-}
-
 static void on_page_change() {
 
 	memory.put(pages[1], 0x0400);
 	memory.put(pages[2], 0x0800);
-	memory.put(hires_page1, 0x2000);
-	memory.put(hires_page2, 0x4000);
+	memory.put(hgr_page1, 0x2000);
+	memory.put(hgr_page2, 0x4000);
 
 	if (switches.is_page2()) {
 		if (switches.is_hires()) {
 			memory.put(screen.hires, 0x4000);
-			screen.hires.show_page(hires_page2);
+			screen.hires.show_page(hgr_page2);
 		} else {
 			memory.put(screen.lores, 0x0800);
 			screen.lores.show_page(pages[2]);
 		}
 	} else if (switches.is_hires()) {
 		memory.put(screen.hires, 0x2000);
-		screen.hires.show_page(hires_page1);
+		screen.hires.show_page(hgr_page1);
 	} else {
-		screen.lores.show_page(pages[1]);
 		memory.put(screen.lores, 0x0400);
+		screen.lores.show_page(pages[1]);
 	}
 }
 
@@ -122,10 +105,10 @@ static void reset(bool sd) {
 	switches.on_read_keyboard([]() { return input.read(); });
 	switches.on_strobe_keyboard([]() { input.strobe(); });
 
-	switches.on_access_page([](bool) { on_page_change(); });
-	switches.on_access_graphics_text([](bool) { on_screen_change(); });
-	switches.on_access_full_mixed([](bool) { on_screen_change(); });
-	switches.on_access_res([](bool) { on_screen_change(); });
+	switches.on_access_page([](bool) { on_page_change(); screen.on_mode_change(); });
+	switches.on_access_graphics_text([](bool) { screen.on_mode_change(); });
+	switches.on_access_full_mixed([](bool) { screen.on_mode_change(); });
+	switches.on_access_res([](bool) { screen.on_mode_change(); });
 
 	switches.on_access_speaker([]() { digitalWrite(PWM_SOUND, !digitalRead(PWM_SOUND)); });
 
@@ -186,10 +169,10 @@ void setup() {
 	DBG_INI("RAM:    %dkB at 0x0000", RAM_PAGES);
 	for (unsigned i = 0; i < 8; i++)
 		memory.put(pages[i], i * ram<>::page_size);
-	memory.put(hires_page1, 8192);
-	memory.put(hires_page2, 8192);
-	for (unsigned i = 8; i < RAM_PAGES-24; i++)
-		memory.put(pages[i], i * ram<>::page_size);
+	memory.put(hgr_page1, 0x2000);
+	memory.put(hgr_page2, 0x4000);
+	for (unsigned i = 8; i < RAM_PAGES-16; i++)
+		memory.put(pages[i], (i + 24) * ram<>::page_size);
 
 #if defined(USE_SPIRAM)
 	DBG_INI("SpiRAM: %dkB at 0x%04x", SPIRAM_EXTENT * Memory::page_size / 1024, SPIRAM_BASE);
