@@ -10,18 +10,28 @@ template<unsigned N> class Resolution: public Memory::Device {
 public:
 	void show_page(ram<N> &r) { _ram = &r; on_page_change(); }
 
-	virtual void operator=(uint8_t c) { if (c != _ram->get(_acc)) { _ram->set(_acc, c); on_set(c); } }
+	void set_active(bool a) { _active = _top_active = a; }
+
+	void set_top_active(bool a) { _top_active = a; }
+
+	virtual void operator=(uint8_t c) {
+		if (c != _ram->get(_acc)) {
+			_ram->set(_acc, c);
+			if (_active) on_set(c);
+		}
+	}
 
 	virtual operator uint8_t() { return _ram->get(_acc); }
-
 protected:
 	Resolution(): Memory::Device(N) {}
 
-	virtual void on_page_change() =0;
+	virtual void on_page_change() {}
 
 	virtual void on_set(uint8_t c) =0;
 
 	ram<N> *_ram;
+
+	bool _active, _top_active;
 };
 
 class Lores: public Resolution<1024> {
@@ -57,9 +67,11 @@ public:
 
 	void redraw(uint8_t rowstart, uint8_t rowend);
 private:
-	void on_page_change() override;
-
 	void on_set(uint8_t) override;
+
+	bool from_address(Memory::address a, uint16_t &x, uint16_t &y);
+
+	Memory::address to_address(uint16_t y);
 
 	Display &_display;
 };

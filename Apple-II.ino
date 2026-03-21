@@ -65,17 +65,13 @@ static void on_page_change() {
 	memory.put(hgr_page2, 0x4000);
 
 	if (switches.is_page2()) {
-		if (switches.is_hires()) {
-			memory.put(screen.hires, 0x4000);
-			screen.hires.show_page(hgr_page2);
-		} else {
-			memory.put(screen.lores, 0x0800);
-			screen.lores.show_page(pages[2]);
-		}
-	} else if (switches.is_hires()) {
+		memory.put(screen.hires, 0x4000);
+		screen.hires.show_page(hgr_page2);
+		memory.put(screen.lores, 0x0800);
+		screen.lores.show_page(pages[2]);
+	} else {
 		memory.put(screen.hires, 0x2000);
 		screen.hires.show_page(hgr_page1);
-	} else {
 		memory.put(screen.lores, 0x0400);
 		screen.lores.show_page(pages[1]);
 	}

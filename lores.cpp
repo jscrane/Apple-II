@@ -54,19 +54,19 @@ void Lores::on_set(uint8_t c) {
 	uint8_t row, col;
 	if (from_address(_acc, row, col)) {
 
+		if (is_flash(c))
+			_flashrows |= (1UL << row);
+
 		if ((is_top(row) && _top_text) || (!is_top(row) && _btm_text))
 			draw_text(row, col, c);
 		else
 			draw_lores(row, col, c);
-
-		if (is_flash(c))
-			_flashrows |= (1UL << row);
 	}
 }
 
 void Lores::redraw(uint8_t rowstart, uint8_t rowend, bool as_text) {
 
-	DBG_DSP("redraw: %d %d", rowstart, rowend);
+	DBG_DSP("Lores::redraw: %d %d", rowstart, rowend);
 
 	if (is_top(rowstart)) _top_text = as_text;
 	else _btm_text = as_text;
@@ -97,6 +97,8 @@ void Lores::draw_lores(uint8_t row, uint8_t col, uint8_t c) {
 
 void Lores::draw_text(uint8_t row, uint8_t col, uint8_t c) {
 
+	if (is_top(row) && !_top_active) return;
+
 	uint16_t cc = CHAR_HEIGHT * (c & 0x3f);
 	uint16_t xc = col * CHAR_WIDTH, yc = row * CHAR_HEIGHT;
 	uint16_t fg = _display.fg(), bg = _display.bg();
@@ -113,10 +115,8 @@ void Lores::draw_text(uint8_t row, uint8_t col, uint8_t c) {
 
 void Lores::flash_text(bool flash_is_inverse) {
 
-	uint8_t rowstart = _top_text? 0: SPLIT_LINE;
+	uint8_t rowstart = _top_text && _top_active? 0: SPLIT_LINE;
 	uint8_t rowend = _btm_text? SCREEN_LINES: SPLIT_LINE;
-
-	DBG_DSP("%d %d %x %d", rowstart, rowend, _flashrows, flash_is_inverse);
 
 	uint32_t bit = (1UL << rowstart);
 	if (_flashrows < bit)

@@ -12,10 +12,25 @@
 void Screen::on_mode_change() {
 
 	bool text = _switches.is_text(), mixed = _switches.is_mixed(), hgr = _switches.is_hires();
-	bool top_text = text, btm_text = text || mixed;
-	uint8_t state = (hgr << 3) | (_switches.is_page2() << 2) | (btm_text << 1) | top_text;
+	bool top_text = text && !hgr, btm_text = text || mixed;
+	uint8_t state = (text << 4) | (hgr << 3) | (_switches.is_page2() << 2) | (btm_text << 1) | top_text;
 
 	if (state == _state) return;
+
+	DBG_DSP("text=%d mixed=%d hgr=%d", text, mixed, hgr);
+
+	if (text) {
+		lores.set_active(true);
+		hires.set_active(false);
+	} else if (mixed) {
+		lores.set_active(true);
+		hires.set_active(true);
+		lores.set_top_active(!hgr);
+		hires.set_top_active(hgr);
+	} else {
+		lores.set_active(!hgr);
+		hires.set_active(hgr);
+	}
 
 	uint8_t diff = state ^ _state;
 	if ((diff & 8) || (diff & 4) || (diff & 1)) {
