@@ -12,13 +12,15 @@ bool Hires::from_address(Memory::address offset, uint16_t &x, uint16_t &y) {
 	if (offset >= 0x1f40) return false;	// screen hole
 
 	uint8_t fine = (offset >> 10) & 0x07;	// bits 10-12
-	uint8_t octad = (offset >> 4) & 0x07;	// bits 4-6
-	uint8_t group = (offset >> 7) & 0x03;	// bits 7-8
-	y = (group << 6) | (octad << 3) | fine;
-	if (y >= 192) return false;
+	uint8_t octad = (offset >> 7) & 0x07;	// bits 7-9
+	uint8_t low = (offset & 0x7f);		// low 7 bits
+	if (low >= 120) return false;		// screen hole
 
-	x = 7 * ((offset % 128) % 40);
-	return true;
+	uint8_t group = low / 40;		// 0, 1 or 2
+	y = (group << 6) | (octad << 3) | fine;
+	x = 7 * (low % 40);
+
+	return y < 192;
 }
 
 Memory::address Hires::to_address(uint16_t y) {
@@ -32,25 +34,29 @@ Memory::address Hires::to_address(uint16_t y) {
 	return group + octad + fine;
 }
 
+void Hires::draw(uint8_t b, uint16_t x, uint16_t y) {
+
+	uint16_t fg = _display.fg(), bg = _display.bg();
+	for (uint8_t i = 0; i < 7; i++) {
+		bool on = (b >> i) & 0x01;
+		_display.drawPixel(x + i, y, on? fg: bg);
+	}
+}
+
 void Hires::on_set(uint8_t b) {
 
-	DBG_DSP("Hires::on_set");
 	uint16_t x, y;
-	if (from_address(_acc, x, y)) {
-		uint16_t fg = _display.fg(), bg = _display.bg();
-		for (uint8_t i = 0; i < 7; i++) {
-			bool on = (b >> i) & 0x01;
-			_display.drawPixel(x + i, y, on? fg: bg);
-		}
-	}
+	if (from_address(_acc, x, y))
+		draw(b, x, y);
 }
 
 void Hires::redraw(uint8_t rowstart, uint8_t rowend) {
 
 	DBG_DSP("Hires::redraw %d %d", rowstart, rowend);
-	uint16_t x = 0;
-	uint16_t y = 8*rowstart;
-	uint16_t w = 280;
-	uint16_t h = 8*(rowend - rowstart);
-	_display.fillRect(x, y, w, h, _display.bg());
+	for (uint8_t row = rowstart; row < rowend; row++) {
+		uint16_t y = 8*row;
+		Memory::address addr = to_address(y);
+		for (uint8_t col = 0; col < CHARS_PER_LINE; col++)
+			draw(_ram->get(addr + col), 7*col, y);
+	}
 }

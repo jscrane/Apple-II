@@ -67,11 +67,13 @@ public:
 
 	void redraw(uint8_t rowstart, uint8_t rowend);
 private:
-	void on_set(uint8_t) override;
+	void on_set(uint8_t b) override;
 
 	bool from_address(Memory::address a, uint16_t &x, uint16_t &y);
 
 	Memory::address to_address(uint16_t y);
+
+	void draw(uint8_t b, uint16_t x, uint16_t y);
 
 	Display &_display;
 };
