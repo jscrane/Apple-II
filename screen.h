@@ -10,16 +10,11 @@ template<unsigned N> class Resolution: public Memory::Device {
 public:
 	void show_page(ram<N> &r) { _ram = &r; on_page_change(); }
 
-	void set_active(bool a) { _active = _top_active = a; }
-
 	void set_top_active(bool a) { _top_active = a; }
 
-	virtual void operator=(uint8_t c) {
-		if (c != _ram->get(_acc)) {
-			_ram->set(_acc, c);
-			if (_active) on_set(c);
-		}
-	}
+	void set_btm_active(bool a) { _btm_active = a; }
+
+	virtual void operator=(uint8_t c) { _ram->set(_acc, c); if (_top_active || _btm_active) on_set(c); }
 
 	virtual operator uint8_t() { return _ram->get(_acc); }
 protected:
@@ -31,7 +26,7 @@ protected:
 
 	ram<N> *_ram;
 
-	bool _active, _top_active;
+	bool _top_active, _btm_active;
 };
 
 class Lores: public Resolution<1024> {

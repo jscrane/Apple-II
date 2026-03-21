@@ -98,6 +98,7 @@ void Lores::draw_lores(uint8_t row, uint8_t col, uint8_t c) {
 void Lores::draw_text(uint8_t row, uint8_t col, uint8_t c) {
 
 	if (is_top(row) && !_top_active) return;
+	if (!is_top(row) && !_btm_active) return;
 
 	uint16_t cc = CHAR_HEIGHT * (c & 0x3f);
 	uint16_t xc = col * CHAR_WIDTH, yc = row * CHAR_HEIGHT;

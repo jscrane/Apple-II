@@ -8,6 +8,8 @@
 
 #include "screen.h"
 
+inline bool is_btm(uint16_t y) { return y >= 160; }
+
 bool Hires::from_address(Memory::address offset, uint16_t &x, uint16_t &y) {
 	if (offset >= 0x1f40) return false;	// screen hole
 
@@ -26,7 +28,7 @@ bool Hires::from_address(Memory::address offset, uint16_t &x, uint16_t &y) {
 Memory::address Hires::to_address(uint16_t y) {
 
 	// Group (0, 64, or 128)
-	uint16_t group = (y & 0xC0) << 4;       // y bits 6,7
+	uint16_t group = (y / 64) * 40;
 	// Octad (0-7 within the group)
 	uint16_t octad = (y & 0x38) << 1;       // y bits 3,4,5
 	// Fine Y (the 8 scanlines of a character cell)
@@ -35,6 +37,9 @@ Memory::address Hires::to_address(uint16_t y) {
 }
 
 void Hires::draw(uint8_t b, uint16_t x, uint16_t y) {
+
+	//DBG_DSP("draw: %04x %x %d %d", _acc, b, x, y);
+	if (is_btm(y) && !_btm_active) return;
 
 	uint16_t fg = _display.fg(), bg = _display.bg();
 	for (uint8_t i = 0; i < 7; i++) {
