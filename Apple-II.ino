@@ -50,8 +50,8 @@ ps2_serial_kbd kbd;
 #endif
 
 Display display;
-SoftSwitches switches;
 Screen screen(display);
+SoftSwitches switches;
 Input input(kbd, files);
 Disk disk(DISK_SLOT, memory, drive1, drive2);
 
