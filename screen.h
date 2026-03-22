@@ -77,16 +77,14 @@ class SoftSwitches;
 
 class Screen {
 public:
-	Screen(Display &display, SoftSwitches &switches): lores(display), hires(display), _switches(switches), _state(0) {}
+	Screen(Display &display): lores(display), hires(display), _state(0) {}
 
 	Lores lores;
 
 	Hires hires;
 
-	void on_mode_change();
+	void on_mode_change(uint8_t state);
 
 private:
-	SoftSwitches &_switches;
-
 	uint8_t _state;
 };

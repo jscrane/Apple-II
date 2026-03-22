@@ -9,10 +9,7 @@
 #include "screen.h"
 #include "softswitches.h"
 
-void Screen::on_mode_change() {
-
-	uint8_t state = (_switches.is_text() << 3) | (_switches.is_mixed() << 2) |
-			(_switches.is_page2() << 1) | (_switches.is_hires() << 0);
+void Screen::on_mode_change(uint8_t state) {
 
 	if (state == _state) return;
 

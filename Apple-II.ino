@@ -51,13 +51,17 @@ ps2_serial_kbd kbd;
 
 Display display;
 SoftSwitches switches;
-Screen screen(display, switches);
+Screen screen(display);
 Input input(kbd, files);
 Disk disk(DISK_SLOT, memory, drive1, drive2);
 
 #define FLASH_INTERVAL	250000
 
-static void on_page_change() {
+static void screen_mode_change() {
+	screen.on_mode_change(switches.screen_state());
+}
+
+static void screen_page_change() {
 
 	memory.put(pages[1], 0x0400);
 	memory.put(pages[2], 0x0800);
@@ -75,6 +79,7 @@ static void on_page_change() {
 		memory.put(screen.lores, 0x0400);
 		screen.lores.show_page(pages[1]);
 	}
+	screen_mode_change();
 }
 
 static void flash_text() {
@@ -101,10 +106,10 @@ static void reset(bool sd) {
 	switches.on_read_keyboard([]() { return input.read(); });
 	switches.on_strobe_keyboard([]() { input.strobe(); });
 
-	switches.on_access_page([](bool) { on_page_change(); screen.on_mode_change(); });
-	switches.on_access_graphics_text([](bool) { screen.on_mode_change(); });
-	switches.on_access_full_mixed([](bool) { screen.on_mode_change(); });
-	switches.on_access_res([](bool) { screen.on_mode_change(); });
+	switches.on_access_page(screen_page_change);
+	switches.on_access_graphics_text(screen_mode_change);
+	switches.on_access_full_mixed(screen_mode_change);
+	switches.on_access_res(screen_mode_change);
 
 	switches.on_access_speaker([]() { digitalWrite(PWM_SOUND, !digitalRead(PWM_SOUND)); });
 
