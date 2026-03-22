@@ -58,7 +58,7 @@ Disk disk(DISK_SLOT, memory, drive1, drive2);
 #define FLASH_INTERVAL	250000
 
 static void screen_mode_change() {
-	screen.on_mode_change(switches.screen_state());
+	screen.on_mode_change(switches.screen_mode());
 }
 
 static void screen_page_change() {

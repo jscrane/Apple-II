@@ -57,7 +57,6 @@ void Lores::on_set(uint8_t c) {
 		if (is_flash(c))
 			_flashrows |= (1UL << row);
 
-
 		bool top_row = is_top(row), btm_row = !top_row;
 
 		if ((top_row && _top_active) || (btm_row && _btm_active)) {

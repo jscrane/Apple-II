@@ -53,7 +53,7 @@ public:
 	bool is_page2() const { return page2; }
 	bool is_hires() const { return hires; }
 
-	uint8_t screen_state() const { return (text << 3) | (mixed << 2) | (page2 << 1) | (hires << 0); }
+	uint8_t screen_mode() const { return (text << 3) | (mixed << 2) | (page2 << 1) | (hires << 0); }
 
 private:
 	void toggle();

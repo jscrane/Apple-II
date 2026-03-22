@@ -7,13 +7,12 @@
 #include <ram.h>
 
 #include "screen.h"
-#include "softswitches.h"
 
-void Screen::on_mode_change(uint8_t state) {
+void Screen::on_mode_change(uint8_t mode) {
 
-	if (state == _state) return;
+	if (mode == _mode) return;
 
-	bool text = (state >> 3) & 1, mixed = (state >> 2) & 1, hgr = state & 1;
+	bool text = (mode >> 3) & 1, mixed = (mode >> 2) & 1, hgr = mode & 1;
 	bool top_hgr = !text && hgr, btm_text = text || mixed;
 
 	hires.set_top_active(top_hgr);
@@ -21,7 +20,7 @@ void Screen::on_mode_change(uint8_t state) {
 	hires.set_btm_active(!btm_text && hgr);
 	lores.set_btm_active(btm_text);
 
-	uint8_t diff = state ^ _state;
+	uint8_t diff = mode ^ _mode;
 	if (diff & 0b1011) {	// skip if only "mixed" changed
 		if (text)
 			lores.redraw(0, SPLIT_LINE, true);
@@ -43,5 +42,5 @@ void Screen::on_mode_change(uint8_t state) {
 			lores.redraw(SPLIT_LINE, SCREEN_LINES, false);
 	}
 
-	_state = state;
+	_mode = mode;
 }

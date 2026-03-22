@@ -8,7 +8,7 @@
 
 #include "screen.h"
 
-inline bool is_btm(uint16_t y) { return y >= 160; }
+inline bool is_btm(uint16_t y) { return y >= SPLIT_LINE * CHAR_HEIGHT; }
 
 bool Hires::from_address(Memory::address offset, uint16_t &x, uint16_t &y) {
 	if (offset >= 0x1f40) return false;	// screen hole
@@ -22,7 +22,7 @@ bool Hires::from_address(Memory::address offset, uint16_t &x, uint16_t &y) {
 	y = (group << 6) | (octad << 3) | fine;
 	x = 7 * (low % 40);
 
-	return y < 192;
+	return y < SCREEN_LINES * CHAR_HEIGHT;
 }
 
 Memory::address Hires::to_address(uint16_t y) {
@@ -39,7 +39,7 @@ Memory::address Hires::to_address(uint16_t y) {
 void Hires::draw(uint8_t b, uint16_t x, uint16_t y) {
 
 	uint16_t fg = _display.fg(), bg = _display.bg();
-	for (uint8_t i = 0; i < 7; i++) {
+	for (uint8_t i = 0; i < CHAR_WIDTH; i++) {
 		bool on = (b >> i) & 0x01;
 		_display.drawPixel(x + i, y, on? fg: bg);
 	}
@@ -60,9 +60,9 @@ void Hires::redraw(uint8_t rowstart, uint8_t rowend) {
 
 	DBG_DSP("Hires::redraw %d %d", rowstart, rowend);
 	for (uint8_t row = rowstart; row < rowend; row++) {
-		uint16_t y = 8*row;
+		uint16_t y = CHAR_HEIGHT*row;
 		Memory::address addr = to_address(y);
 		for (uint8_t col = 0; col < CHARS_PER_LINE; col++)
-			draw(_ram->get(addr + col), 7*col, y);
+			draw(_ram->get(addr + col), CHAR_WIDTH*col, y);
 	}
 }
