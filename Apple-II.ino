@@ -172,8 +172,8 @@ void setup() {
 		memory.put(pages[i], i * ram<>::page_size);
 	memory.put(hgr_page1, 0x2000);
 	memory.put(hgr_page2, 0x4000);
-	for (unsigned i = 0; i < RAM_PAGES-24; i++)
-		memory.put(pages[i], (i + 24) * ram<>::page_size);
+	for (unsigned i = 8; i < RAM_PAGES-16; i++)
+		memory.put(pages[i], (i + 16) * ram<>::page_size);
 
 #if defined(USE_SPIRAM)
 	DBG_INI("SpiRAM: %dkB at 0x%04x", SPIRAM_EXTENT * Memory::page_size / 1024, SPIRAM_BASE);
