@@ -38,10 +38,10 @@ public:
 
 	void on_access_speaker(std::function<void(void)> f) { speaker = f; }
 
-	void on_access_graphics_text(std::function<void(bool)> f) { graphics_text = f; }
-	void on_access_full_mixed(std::function<void(bool)> f) { full_mixed = f; }
-	void on_access_page(std::function<void(bool)> f) { page = f; }
-	void on_access_res(std::function<void(bool)> f) { res = f; }
+	void on_access_graphics_text(std::function<void(void)> f) { graphics_text = f; }
+	void on_access_full_mixed(std::function<void(void)> f) { full_mixed = f; }
+	void on_access_page(std::function<void(void)> f) { page = f; }
+	void on_access_res(std::function<void(void)> f) { res = f; }
 
 	void on_access_an0(std::function<void(bool)> f) { an0 = f; }
 	void on_access_an1(std::function<void(bool)> f) { an1 = f; }
@@ -53,12 +53,14 @@ public:
 	bool is_page2() const { return page2; }
 	bool is_hires() const { return hires; }
 
+	uint8_t screen_mode() const { return (text << 3) | (mixed << 2) | (page2 << 1) | (hires << 0); }
+
 private:
 	void toggle();
 
 	std::function<uint8_t(void)> read_keyboard;
 	std::function<void(void)> speaker, strobe_keyboard;
-	std::function<void(bool)> graphics_text, full_mixed, page, res;
+	std::function<void(void)> graphics_text, full_mixed, page, res;
 	std::function<void(bool)> an0, an1, an2, an3;
 
 	bool text, mixed, page2, hires;

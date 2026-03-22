@@ -25,7 +25,7 @@ void SoftSwitches::toggle() {
 	case DISPLAY_TEXT:
 		text = (_acc & 1);
 		if (graphics_text) {
-			graphics_text(text);
+			graphics_text();
 			return;
 		}
 		break;
@@ -33,7 +33,7 @@ void SoftSwitches::toggle() {
 	case DISPLAY_MIXED:
 		mixed = (_acc & 1);
 		if (full_mixed) {
-			full_mixed(mixed);
+			full_mixed();
 			return;
 		}
 		break;
@@ -41,7 +41,7 @@ void SoftSwitches::toggle() {
 	case DISPLAY_PAGE2:
 		page2 = (_acc & 1);
 		if (page) {
-			page(page2);
+			page();
 			return;
 		}
 		break;
@@ -49,7 +49,7 @@ void SoftSwitches::toggle() {
 	case DISPLAY_HIRES:
 		hires = (_acc & 1);
 		if (res) {
-			res(hires);
+			res();
 			return;
 		}
 		break;
