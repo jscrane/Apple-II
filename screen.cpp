@@ -34,12 +34,17 @@ void Screen::on_mode_change() {
 			lores.redraw(0, SPLIT_LINE, false);
 	}
 
-	if (btm_text)
-		lores.redraw(SPLIT_LINE, SCREEN_LINES, true);
-	else if (hgr)
-		hires.redraw(SPLIT_LINE, SCREEN_LINES);
-	else
-		lores.redraw(SPLIT_LINE, SCREEN_LINES, false);
+	// redraw bottom if any of text/graphics, mixed/full or page2/1 changes
+	// _or_ if hires/lores flips _and_ in full-screen graphics mode
+	// i.e., skip if in mixed mode and hires/lores changes
+	if ((diff & 0b1110) || ((diff & 0x01) && !btm_text)) {
+		if (btm_text)
+			lores.redraw(SPLIT_LINE, SCREEN_LINES, true);
+		else if (hgr)
+			hires.redraw(SPLIT_LINE, SCREEN_LINES);
+		else
+			lores.redraw(SPLIT_LINE, SCREEN_LINES, false);
+	}
 
 	_state = state;
 }

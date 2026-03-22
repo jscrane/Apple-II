@@ -38,9 +38,6 @@ Memory::address Hires::to_address(uint16_t y) {
 
 void Hires::draw(uint8_t b, uint16_t x, uint16_t y) {
 
-	//DBG_DSP("draw: %04x %x %d %d", _acc, b, x, y);
-	if (is_btm(y) && !_btm_active) return;
-
 	uint16_t fg = _display.fg(), bg = _display.bg();
 	for (uint8_t i = 0; i < 7; i++) {
 		bool on = (b >> i) & 0x01;
@@ -48,13 +45,17 @@ void Hires::draw(uint8_t b, uint16_t x, uint16_t y) {
 	}
 }
 
+// called when one or both of _top_active and _btm_active is set
+// for hires, at least _top_active must be set, so only need to
+// check _btm_active here.
 void Hires::on_set(uint8_t b) {
 
 	uint16_t x, y;
-	if (from_address(_acc, x, y))
+	if (from_address(_acc, x, y) && (!is_btm(y) || _btm_active))
 		draw(b, x, y);
 }
 
+// only called from Screen::on_mode_change when required.
 void Hires::redraw(uint8_t rowstart, uint8_t rowend) {
 
 	DBG_DSP("Hires::redraw %d %d", rowstart, rowend);

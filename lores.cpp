@@ -57,10 +57,15 @@ void Lores::on_set(uint8_t c) {
 		if (is_flash(c))
 			_flashrows |= (1UL << row);
 
-		if ((is_top(row) && _top_text) || (!is_top(row) && _btm_text))
-			draw_text(row, col, c);
-		else
-			draw_lores(row, col, c);
+
+		bool top_row = is_top(row), btm_row = !top_row;
+
+		if ((top_row && _top_active) || (btm_row && _btm_active)) {
+			if ((top_row && _top_text) || (btm_row && _btm_text))
+				draw_text(row, col, c);
+			else
+				draw_lores(row, col, c);
+		}
 	}
 }
 
