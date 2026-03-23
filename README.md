@@ -11,6 +11,15 @@ Keyboard
 - F8 (^U): select destination device (Tape, A:, B:)
 - F10(^W): watch CPU execute instructions (if debugging enabled)
 
+Tested Platforms
+----------------
+
+Please see [r65emu](https://github.com/jscrane/r65emu) for dependency information.
+
+- ESP8266 with ILI9341 TFT display, serial terminal and LittleFS (`esp8bit`).
+- [LilyGO TTGO](https://www.tinytronics.nl/shop/en/development-boards/microcontroller-boards/with-wi-fi/lilygo-ttgo-vga32-esp32) with VGA, PS/2 keyboard and SD card.
+- [Adafruit Feather](https://www.adafruit.com/product/4884) with DVI, serial terminal and LittleFS.
+
 Programs
 --------
 
