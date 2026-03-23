@@ -61,6 +61,10 @@ static void screen_mode_change() {
 	screen.on_mode_change(switches.screen_mode());
 }
 
+// Lores watches memory regions $400 or $800 depending on page
+// Hires watches memory regions $2000 or $4000 depending on page
+// (because of mixed mode, additional guards are needed to prevent
+// drawing at the wrong time: see screen_mode_change)
 static void screen_page_change() {
 
 	memory.put(pages[1], 0x0400);

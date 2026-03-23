@@ -8,6 +8,12 @@
 
 #include "screen.h"
 
+// this routine attempts to minimise the amount of screen updating
+// required whenever the display-related softswitches change:
+// page - page1 / page2
+// text - text / graphics
+// mixed - mixed / full-screen
+// hgr - lores / hires graphics
 void Screen::on_mode_change(uint8_t mode) {
 
 	if (mode == _mode) return;
