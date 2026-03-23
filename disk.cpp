@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <pgmspace.h>
 
 #include <machine.h>
 #include <memory.h>
