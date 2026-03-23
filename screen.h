@@ -31,6 +31,8 @@ protected:
 
 class Lores: public Resolution<1024> {
 public:
+	using Resolution<1024>::operator=; // bring the base operator into scope to prevent hiding
+
 	Lores(Display &display): _display(display) {}
 
 	void flash_text(bool flash_is_inverse);
@@ -58,6 +60,8 @@ private:
 
 class Hires: public Resolution<8192> {
 public:
+	using Resolution<8192>::operator=; // bring the base operator into scope to prevent hiding
+
 	Hires(Display &display): _display(display) {}
 
 	void redraw(uint8_t rowstart, uint8_t rowend);
