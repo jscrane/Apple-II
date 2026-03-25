@@ -117,7 +117,7 @@ static void reset(bool sd) {
 
 	switches.on_access_speaker([]() { digitalWrite(PWM_SOUND, !digitalRead(PWM_SOUND)); });
 
-	machine.register_cpu_halted_handler([]() {
+	cpu.set_illegal_instruction_handler([]() {
 		disk.on_illegal_instruction(cpu.pc());
 		cpu.resume();
 	});
