@@ -180,8 +180,8 @@ void setup() {
 		memory.put(pages[i], (i + 16) * ram<>::page_size);
 
 #if defined(USE_SPIRAM)
-	DBG_INI("SpiRAM: %dkB at 0x%04x", SPIRAM_EXTENT * Memory::page_size / 1024, SPIRAM_BASE);
-	memory.put(sram, SPIRAM_BASE, SPIRAM_EXTENT * Memory::page_size);
+	DBG_INI("SpiRAM: %dkB at 0x%04x", SPIRAM_EXTENT / 1024, SPIRAM_BASE);
+	memory.put(sram, SPIRAM_BASE, SPIRAM_EXTENT);
 #endif
 
 	memory.put(switches, 0xc000);
