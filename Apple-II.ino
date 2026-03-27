@@ -121,7 +121,7 @@ static void reset(bool sd) {
 		disk.on_illegal_instruction(cpu.pc());
 		cpu.resume();
 	});
-	machine.register_cpu_debug_handler([]() { return false; });
+	machine.set_cpu_debugging(debug_never);
 
 	if (!sd) {
 		DBG_EMU("No SD Card");
@@ -156,9 +156,6 @@ static void function_key(uint8_t fn) {
 	case 8:
 		files.next_device();
 		break;
-	case 10:
-		machine.debug_cpu();
-		return;
 	}
 	file_status();
 }
