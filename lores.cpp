@@ -83,7 +83,7 @@ void Lores::redraw(uint8_t rowstart, uint8_t rowend, bool as_text) {
 				draw_text(row, col, c);
 			else
 				draw_lores(row, col, c);
-			yield();
+			_machine->yield();
 		}
 	}
 }
@@ -139,7 +139,7 @@ void Lores::flash_text(bool flash_is_inverse) {
 					if (flash_is_inverse)
 						c |= 0x80;
 					draw_text(row, col, c);
-					yield();
+					_machine->yield();
 				}
 			}
 			if (!found_flash)
