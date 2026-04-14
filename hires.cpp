@@ -38,10 +38,6 @@ Memory::address Hires::to_address(uint16_t y) {
 }
 
 #if defined(HIRES_COLOUR)
-#define HIRES_REFRESH	1000000
-static uint32_t dirty_rows[6];
-static int timer = -1;
-
 void Hires::redraw_row(uint16_t y) {
 
 	Memory::address a = to_address(y);
@@ -78,11 +74,15 @@ void Hires::redraw_row(uint16_t y) {
 	}
 }
 
+static uint32_t dirty_rows[6];
+static int timer = -1;
+
 void Hires::redraw_dirty() {
 	for (int i = 0; i < 6; i++) {
 		for (int j = 0; j < 32; j++)
 			if (dirty_rows[i] & (1 << j))
-				redraw_row(j);
+				redraw_row((i << 5) + j);
+		_machine->yield();
 		dirty_rows[i] = 0;
 	}
 	timer = -1;
@@ -123,5 +123,6 @@ void Hires::redraw(uint8_t rowstart, uint8_t rowend) {
 		Memory::address addr = to_address(y);
 		for (uint8_t col = 0; col < CHARS_PER_LINE; col++)
 			draw(_ram->get(addr + col), CHAR_WIDTH*col, y);
+		_machine->yield();
 	}
 }

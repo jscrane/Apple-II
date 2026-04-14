@@ -10,6 +10,7 @@
 
 //#define HIRES_MONO
 #define HIRES_COLOUR
+#define HIRES_REFRESH	1000000
 
 #if defined(USE_ESPI)
 #define ORIENT		reverse_landscape
