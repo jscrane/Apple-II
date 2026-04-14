@@ -28,13 +28,17 @@ bool Hires::from_address(Memory::address offset, uint16_t &x, uint16_t &y) {
 
 Memory::address Hires::to_address(uint16_t y) {
 
-	// Group (0, 64, or 128)
-	uint16_t group = (y / 64) * 40;
-	// Octad (0-7 within the group)
-	uint16_t octad = (y & 0x38) << 1;       // y bits 3,4,5
-	// Fine Y (the 8 scanlines of a character cell)
-	uint16_t fine  = (y & 0x07) << 10;      // y bits 0,1,2
-	return group + octad + fine;
+	// 1. Fine Y (bits 0,1,2): offset by 1024 bytes ($400 hex)
+	uint16_t fine  = (y & 0x07) << 10;
+
+	// 2. Octad (bits 3,4,5): offset by 128 bytes ($80 hex)
+	uint16_t octad = (y & 0x38) << 4; // Shifted so bit 3 becomes value 128
+
+	// 3. Group (bits 6,7): offset by 40 bytes ($28 hex)
+	// Note: y/64 effectively isolates bits 6 and 7.
+	uint16_t group = (y >> 6) * 0x28;
+
+	return fine | octad | group;
 }
 
 #if defined(HIRES_COLOUR)
@@ -79,11 +83,13 @@ static int timer = -1;
 
 void Hires::redraw_dirty() {
 	for (int i = 0; i < 6; i++) {
-		for (int j = 0; j < 32; j++)
-			if (dirty_rows[i] & (1 << j))
-				redraw_row((i << 5) + j);
-		_machine->yield();
-		dirty_rows[i] = 0;
+		if (dirty_rows[i]) {
+			for (int j = 0; j < 32; j++)
+				if (dirty_rows[i] & (1 << j))
+					redraw_row((i << 5) + j);
+			_machine->yield();
+			dirty_rows[i] = 0;
+		}
 	}
 	timer = -1;
 }
