@@ -2,10 +2,14 @@
 
 //#define APPLE_II
 #define APPLE_II_PLUS
+
 #define DISK_SLOT	6
 
 #define BG_COLOUR	BLACK
 #define FG_COLOUR	WHITE
+
+//#define HIRES_MONO
+#define HIRES_COLOUR
 
 #if defined(USE_ESPI)
 #define ORIENT		reverse_landscape

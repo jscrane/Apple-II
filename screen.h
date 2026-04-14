@@ -15,16 +15,14 @@ public:
 	void set_btm_active(bool a) { _btm_active = a; }
 
 	virtual void operator=(uint8_t c) {
-		if (_top_active || _btm_active) on_set(c);
 		_ram->set(_acc, c);
+		if (_top_active || _btm_active) on_set(c);
 	}
 
-	virtual operator uint8_t() { return get(); }
+	virtual operator uint8_t() { return _ram->get(_acc); }
 
 protected:
 	Resolution(): Memory::Device(N) {}
-
-	inline uint8_t get() const { return _ram->get(_acc); }
 
 	virtual void on_page_change() {}
 
@@ -80,7 +78,12 @@ private:
 
 	Memory::address to_address(uint16_t y);
 
+	// mono
 	void draw(uint8_t b, uint16_t x, uint16_t y);
+
+	// colour
+	void redraw_row(uint16_t y);
+	void redraw_dirty();
 
 	Display &_display;
 };
