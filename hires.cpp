@@ -12,18 +12,38 @@
 inline bool is_btm(uint16_t y) { return y >= SPLIT_LINE * CHAR_HEIGHT; }
 
 bool Hires::from_address(Memory::address offset, uint16_t &x, uint16_t &y) {
-	if (offset >= 0x1f40) return false;	// screen hole
 
-	uint8_t fine = (offset >> 10) & 0x07;	// bits 10-12
-	uint8_t octad = (offset >> 7) & 0x07;	// bits 7-9
-	uint8_t low = (offset & 0x7f);		// low 7 bits
-	if (low >= 120) return false;		// screen hole
+	// Bits 10-12: Fine Y (scanline within an 8-line cell)
+	uint16_t fine = (offset >> 10) & 0x07;
+	// Bits 7-9: Octad (8-line "box" within a 64-line group)
+	uint16_t octad = (offset >> 7) & 0x07;
+	// Bits 0-6: The horizontal part, which also encodes the 64-line Group
+	uint16_t low = offset & 0x7F;
 
-	uint8_t group = low / 40;		// 0, 1 or 2
-	y = (group << 6) | (octad << 3) | fine;
-	x = 7 * (low % 40);
+	// The low 7 bits contain the byte column (0-39) and the group offset ($0, $28, $50)
+	uint16_t xByte;
+	uint16_t group;
 
-	return y < SCREEN_LINES * CHAR_HEIGHT;
+	if (low < 40) {
+		group = 0;
+		xByte = low;
+	} else if (low >= 48 && low < 80) {
+		// This range contains Group 1 data AND Row 0's holes ($28-$2F)
+		group = 64;
+		xByte = low - 40;
+	} else if (low >= 96 && low < 120) {
+		// This range contains Group 2 data AND Row 64's holes ($50-$57)
+		group = 128;
+		xByte = low - 80;
+	} else {
+		// Final screen holes at the end of the 128-byte block ($78-$7F)
+		return false;
+	}
+
+	y = group | (octad << 3) | fine;
+	x = xByte * 7;
+
+	return y < 192;
 }
 
 Memory::address Hires::to_address(uint16_t y) {
