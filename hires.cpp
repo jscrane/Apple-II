@@ -64,19 +64,19 @@ Memory::address Hires::to_address(uint16_t y) {
 #if defined(HIRES_COLOUR)
 void Hires::redraw_row(uint16_t y) {
 
-	Memory::address a = to_address(y);
-	for (int xb = 0; xb < CHARS_PER_LINE; xb++, a++) {
+	Memory::address astart = to_address(y);
+	uint8_t prevb = 0, b = _ram->get(astart), nextb = _ram->get(astart+1);
+	for (int xb = 0; xb < CHARS_PER_LINE; xb++) {
 
-		uint8_t b = _ram->get(a);
 		bool bit7 = (b & 0x80);
 		uint16_t xstart = xb * CHAR_WIDTH;
 
 		// 9-bit sliding window: [NextBit] [7 Bits Current] [PrevBit]
 		uint16_t window = (b & 0x7f) << 1;
 		if (xb > 0)
-			window |= (_ram->get(a-1) >> 6) & 1;
+			window |= (prevb >> 6) & 1;
 		if (xb < CHARS_PER_LINE-1)
-			window |= ((_ram->get(a+1) & 1) << 8);
+			window |= ((nextb & 1) << 8);
 
 		for (int i = 0; i < CHAR_WIDTH; i++) {
 			uint16_t pattern = (window >> i) & 7;	// [next][curr][prev]
@@ -95,18 +95,21 @@ void Hires::redraw_row(uint16_t y) {
 			}
 			_display.drawPixel(x, y, c);
 		}
+		prevb = b;
+		b = nextb;
+		nextb = (xb + 2 < CHARS_PER_LINE)? _ram->get(astart + xb + 2): 0;
 	}
 }
 
-static uint32_t dirty_rows[6];
+static uint16_t dirty_rows[12];
 static int timer = -1;
 
 void Hires::redraw_dirty() {
-	for (int i = 0; i < 6; i++) {
+	for (int i = 0; i < 12; i++) {
 		if (dirty_rows[i]) {
-			for (int j = 0; j < 32; j++)
+			for (int j = 0; j < 16; j++)
 				if (dirty_rows[i] & (1 << j))
-					redraw_row((i << 5) + j);
+					redraw_row((i << 4) + j);
 			_machine->yield();
 			dirty_rows[i] = 0;
 		}
@@ -124,7 +127,7 @@ void Hires::draw(uint8_t b, uint16_t x, uint16_t y) {
 		_display.drawPixel(x + i, y, on? fg: bg);
 	}
 #else
-	dirty_rows[y >> 5] |= (1 << (y & 0x1f));
+	dirty_rows[y >> 4] |= (1 << (y & 0x0f));
 	if (timer < 0)
 		timer = _machine->oneshot_timer(HIRES_REFRESH, [this]() { redraw_dirty(); });
 #endif
