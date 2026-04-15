@@ -10,7 +10,12 @@
 
 //#define HIRES_MONO
 #define HIRES_COLOUR
+
+#if defined(HIRES_COLOUR) && defined(USE_TFT)
 #define HIRES_REFRESH	1000000
+#else
+#define HIRES_REFRESH	40000
+#endif
 
 #if defined(USE_ESPI)
 #define ORIENT		reverse_landscape
