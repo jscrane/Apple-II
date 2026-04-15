@@ -41,7 +41,7 @@ bool Hires::from_address(Memory::address offset, uint16_t &x, uint16_t &y) {
 	}
 
 	y = group | (octad << 3) | fine;
-	x = xByte * 7;
+	x = xByte * CHAR_WIDTH;
 
 	return y < 192;
 }
