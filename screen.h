@@ -14,15 +14,19 @@ public:
 
 	void set_btm_active(bool a) { _btm_active = a; }
 
-	virtual void operator=(uint8_t c) { _ram->set(_acc, c); if (_top_active || _btm_active) on_set(c); }
+	virtual void operator=(uint8_t c) {
+		_ram->set(_acc, c);
+		if (_top_active || _btm_active) on_set(c);
+	}
 
 	virtual operator uint8_t() { return _ram->get(_acc); }
+
 protected:
 	Resolution(): Memory::Device(N) {}
 
 	virtual void on_page_change() {}
 
-	virtual void on_set(uint8_t c) =0;
+	virtual void on_set(uint8_t) =0;
 
 	ram<N> *_ram;
 
@@ -38,6 +42,7 @@ public:
 	void flash_text(bool flash_is_inverse);
 
 	void redraw(uint8_t rowstart, uint8_t rowend, bool as_text);
+
 private:
 	void on_page_change() override;
 
@@ -65,19 +70,23 @@ public:
 	Hires(Display &display): _display(display) {}
 
 	void redraw(uint8_t rowstart, uint8_t rowend);
+
 private:
-	void on_set(uint8_t b) override;
+	void on_set(uint8_t) override;
 
 	bool from_address(Memory::address a, uint16_t &x, uint16_t &y);
 
 	Memory::address to_address(uint16_t y);
 
+	// mono
 	void draw(uint8_t b, uint16_t x, uint16_t y);
+
+	// colour
+	void redraw_row(uint16_t y);
+	void redraw_dirty();
 
 	Display &_display;
 };
-
-class SoftSwitches;
 
 class Screen {
 public:
