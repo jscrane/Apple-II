@@ -2,9 +2,9 @@ t ?= esp8266
 
 TERMINAL_SPEED := 115200
 #TERMINAL_EXTRA_FLAGS := -C serialout.txt
-CPPFLAGS = -Wall -O3 -DTERMINAL_SPEED=$(TERMINAL_SPEED) -DSIMPLE_TIMER_MICROS
-#CPPFLAGS += -DDEBUGGING=0x223 -DCPU_DEBUG=0
-LIBRARIES = PS2KeyAdvanced PS2KeyMap SimpleTimer Adafruit_GFX Adafruit_BusIO Wire SPI
+CPPFLAGS = -Wall -O3 -DTERMINAL_SPEED=$(TERMINAL_SPEED)
+#CPPFLAGS += -DDEBUGGING=0x223
+LIBRARIES = PS2KeyAdvanced PS2KeyMap Adafruit_GFX Adafruit_BusIO Wire SPI
 
 ifeq ($t, esp8266)
 BOARD := d1_mini
@@ -18,7 +18,7 @@ LIBRARIES += TFT_eSPI SpiRAM LittleFS
 endif
 
 ifeq ($t, esp32)
-LIBRARIES += FS SPIFFS Network
+LIBRARIES += FS Network
 
 ifeq ($b, lilygo)
 BOARD := ttgo-t7-v14-mini32
