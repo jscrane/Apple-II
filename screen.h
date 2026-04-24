@@ -14,12 +14,12 @@ public:
 
 	void set_btm_active(bool a) { _btm_active = a; }
 
-	virtual void operator=(uint8_t c) {
+	void operator=(uint8_t c) override {
 		_ram->set(_acc, c);
 		if (_top_active || _btm_active) on_set(c);
 	}
 
-	virtual operator uint8_t() { return _ram->get(_acc); }
+	operator uint8_t() override { return _ram->get(_acc); }
 
 protected:
 	Resolution(): Memory::Device(N) {}

@@ -26,13 +26,20 @@ flash_file drive1(1), drive2(2);
 #include "firmware/original_monitor.h"
 #include "firmware/integer_basic.h"
 prom monitor(original_monitor, sizeof(original_monitor));
-prom basic(integer_basic, sizeof(integer_basic));
+prom language(integer_basic, sizeof(integer_basic));
+Memory::address langaddr = 0xe000;
 
 #elif defined(APPLE_II_PLUS)
 #include "firmware/autostart_monitor.h"
 #include "firmware/applesoft_basic.h"
 prom monitor(autostart_monitor, sizeof(autostart_monitor));
-prom basic(applesoft_basic, sizeof(applesoft_basic));
+prom language(applesoft_basic, sizeof(applesoft_basic));
+Memory::address langaddr = 0xd000;
+
+#elif defined(LANGUAGE_CARD)
+#include "langcard.h"
+LanguageCard language;
+Memory::address langaddr = 0xd000;
 #endif
 
 #if defined(USE_HOST_KBD)
@@ -91,6 +98,7 @@ static void flash_text() {
 }
 
 static void file_status() {
+
 	static const char *device_names[MAX_FILES] = { "Tape:", "D1:", "D2:" };
 	const char *filename = files.filename();
 	display.statusf("%s%s", device_names[files.device()], filename? filename: "No file");
@@ -175,12 +183,12 @@ void setup() {
 
 	memory.put(switches, 0xc000);
 	memory.put(disk.bootprom, 0xc600);
-	memory.put(monitor, 0xf800);
 
-#if defined(APPLE_II)
-	memory.put(basic, 0xe000);
-#elif defined(APPLE_II_PLUS)
-	memory.put(basic, 0xd000);
+#if defined(LANGUAGE_CARD)
+	memory.put(language, langaddr);
+#else
+	memory.put(monitor, 0xf800);
+	memory.put(language, langaddr);
 #endif
 
 	kbd.register_fnkey_handler(function_key);
