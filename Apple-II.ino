@@ -11,8 +11,13 @@
 Memory memory;
 r6502 cpu(memory);
 Arduino machine(cpu);
-ram<1024> pages[RAM_PAGES-16];
+ram<1024> sys[8];
 ram<8192> hgr_page1, hgr_page2;
+#if defined(USE_SPIRAM)
+spiram::Block user(sram, 24576);
+#else
+ram<24576> user;
+#endif
 flash_filer files(PROGRAMS);
 flash_file drive1(1), drive2(2);
 
@@ -67,8 +72,8 @@ static void screen_mode_change() {
 // drawing at the wrong time: see screen_mode_change)
 static void screen_page_change() {
 
-	memory.put(pages[1], 0x0400);
-	memory.put(pages[2], 0x0800);
+	memory.put(sys[1], 0x0400);
+	memory.put(sys[2], 0x0800);
 	memory.put(hgr_page1, 0x2000);
 	memory.put(hgr_page2, 0x4000);
 
@@ -76,12 +81,12 @@ static void screen_page_change() {
 		memory.put(screen.hires, 0x4000);
 		screen.hires.show_page(hgr_page2);
 		memory.put(screen.lores, 0x0800);
-		screen.lores.show_page(pages[2]);
+		screen.lores.show_page(sys[2]);
 	} else {
 		memory.put(screen.hires, 0x2000);
 		screen.hires.show_page(hgr_page1);
 		memory.put(screen.lores, 0x0400);
-		screen.lores.show_page(pages[1]);
+		screen.lores.show_page(sys[1]);
 	}
 	screen_mode_change();
 }
@@ -168,17 +173,15 @@ void setup() {
 	display.setScreen(CHAR_WIDTH * CHARS_PER_LINE, CHAR_HEIGHT * SCREEN_LINES);
 	display.clear();
 
-	DBG_INI("RAM:    %dkB at 0x0000", RAM_PAGES);
 	for (unsigned i = 0; i < 8; i++)
-		memory.put(pages[i], i * ram<>::page_size);
+		memory.put(sys[i], i * ram<>::page_size);
 	memory.put(hgr_page1, 0x2000);
 	memory.put(hgr_page2, 0x4000);
-	for (unsigned i = 8; i < RAM_PAGES-16; i++)
-		memory.put(pages[i], (i + 16) * ram<>::page_size);
 
 #if defined(USE_SPIRAM)
-	DBG_INI("SpiRAM: %dkB at 0x%04x", SPIRAM_EXTENT / 1024, SPIRAM_BASE);
-	memory.put(sram, SPIRAM_BASE, SPIRAM_EXTENT);
+	memory.put(user, 0x6000);
+#else
+	memory.put(user, 0x6000);
 #endif
 
 	memory.put(switches, 0xc000);
