@@ -12,6 +12,7 @@ Memory memory;
 r6502 cpu(memory);
 Arduino machine(cpu);
 ram<1024> sys[8];
+ram<1024> &lgr_page1 = sys[1], &lgr_page2 = sys[2];
 ram<8192> hgr_page1, hgr_page2;
 #if defined(USE_SPIRAM)
 spiram::Block user(sram, 24576);
@@ -60,8 +61,8 @@ static void screen_mode_change() {
 // drawing at the wrong time: see screen_mode_change)
 static void screen_page_change() {
 
-	memory.put(sys[1], 0x0400);
-	memory.put(sys[2], 0x0800);
+	memory.put(lgr_page1, 0x0400);
+	memory.put(lgr_page2, 0x0800);
 	memory.put(hgr_page1, 0x2000);
 	memory.put(hgr_page2, 0x4000);
 
@@ -69,12 +70,12 @@ static void screen_page_change() {
 		memory.put(screen.hires, 0x4000);
 		screen.hires.show_page(hgr_page2);
 		memory.put(screen.lores, 0x0800);
-		screen.lores.show_page(sys[2]);
+		screen.lores.show_page(lgr_page2);
 	} else {
 		memory.put(screen.hires, 0x2000);
 		screen.hires.show_page(hgr_page1);
 		memory.put(screen.lores, 0x0400);
-		screen.lores.show_page(sys[1]);
+		screen.lores.show_page(lgr_page1);
 	}
 	screen_mode_change();
 }
