@@ -28,12 +28,12 @@ private:
 	bool _read_rom = true, _can_write = false;
 	uint8_t *_current_bank;
 
-	void select_bank(uint8_t bank) { _current_bank = (bank == 0)? _bank0: _bank1; }
+	void select_bank(bool bank1) { _current_bank = bank1? _bank1: _bank2; }
 	void read_rom() { _read_rom = true; }
 	void read_ram() { _read_rom = false; }
 	void write_enable(bool enable) { _can_write = enable; }
 
 	// currently this just about fits in ram on an esp8266
 	uint8_t _main[8192];
-	uint8_t _bank0[4096], _bank1[4096];
+	uint8_t _bank1[4096], _bank2[4096];
 };

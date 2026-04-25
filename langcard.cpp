@@ -40,7 +40,7 @@ void LanguageCard::Switches::access(uint8_t offset) {
 
 	DBG_MEM("access: %02x", offset);
 
-	_card.select_bank(!(offset & 0x08));
+	_card.select_bank(offset & 0x08);
 
 	switch (offset & 0x03) {
 	case 0:
