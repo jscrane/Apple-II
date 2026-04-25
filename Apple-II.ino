@@ -53,6 +53,7 @@ ps2_serial_kbd kbd;
 Display display;
 Screen screen(display);
 SoftSwitches switches;
+Memory::Devices systemio;
 Input input(kbd, files);
 Disk disk(DISK_SLOT, memory, drive1, drive2);
 
@@ -181,7 +182,8 @@ void setup() {
 	memory.put(user, 0x6000);
 #endif
 
-	memory.put(switches, 0xc000);
+	systemio.put(switches, 0x0000);
+	memory.put(systemio, 0xc000);
 	memory.put(disk.bootprom, 0xc600);
 
 #if defined(LANGUAGE_CARD)
