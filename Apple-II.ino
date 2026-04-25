@@ -11,34 +11,28 @@
 Memory memory;
 r6502 cpu(memory);
 Arduino machine(cpu);
-ram<1024> pages[RAM_PAGES-16];
+ram<1024> sys[8];
+ram<1024> &lgr_page1 = sys[1], &lgr_page2 = sys[2];
 ram<8192> hgr_page1, hgr_page2;
+#if defined(USE_SPIRAM)
+spiram::Block user(sram, 24576);
+#else
+ram<24576> user;
+#endif
 flash_filer files(PROGRAMS);
 flash_file drive1(1), drive2(2);
 
 #if defined(APPLE_II)
 #include "firmware/original_monitor.h"
-#include "firmware/integer_basic1.h"
-#include "firmware/integer_basic2.h"
-#include "firmware/integer_basic3.h"
+#include "firmware/integer_basic.h"
 prom monitor(original_monitor, sizeof(original_monitor));
-prom basic1(integer_basic1, sizeof(integer_basic1));
-prom basic2(integer_basic2, sizeof(integer_basic2));
-prom basic3(integer_basic3, sizeof(integer_basic3));
+prom basic(integer_basic, sizeof(integer_basic));
 
 #elif defined(APPLE_II_PLUS)
 #include "firmware/autostart_monitor.h"
-#include "firmware/applesoft_basic1.h"
-#include "firmware/applesoft_basic2.h"
-#include "firmware/applesoft_basic3.h"
-#include "firmware/applesoft_basic4.h"
-#include "firmware/applesoft_basic5.h"
+#include "firmware/applesoft_basic.h"
 prom monitor(autostart_monitor, sizeof(autostart_monitor));
-prom basic1(applesoft_basic1, sizeof(applesoft_basic1));
-prom basic2(applesoft_basic2, sizeof(applesoft_basic2));
-prom basic3(applesoft_basic3, sizeof(applesoft_basic3));
-prom basic4(applesoft_basic4, sizeof(applesoft_basic4));
-prom basic5(applesoft_basic5, sizeof(applesoft_basic5));
+prom basic(applesoft_basic, sizeof(applesoft_basic));
 #endif
 
 #if defined(USE_HOST_KBD)
@@ -52,6 +46,7 @@ ps2_serial_kbd kbd;
 Display display;
 Screen screen(display);
 SoftSwitches switches;
+Memory::Devices systemio;
 Input input(kbd, files);
 Disk disk(DISK_SLOT, memory, drive1, drive2);
 
@@ -67,8 +62,8 @@ static void screen_mode_change() {
 // drawing at the wrong time: see screen_mode_change)
 static void screen_page_change() {
 
-	memory.put(pages[1], 0x0400);
-	memory.put(pages[2], 0x0800);
+	memory.put(lgr_page1, 0x0400);
+	memory.put(lgr_page2, 0x0800);
 	memory.put(hgr_page1, 0x2000);
 	memory.put(hgr_page2, 0x4000);
 
@@ -76,12 +71,12 @@ static void screen_page_change() {
 		memory.put(screen.hires, 0x4000);
 		screen.hires.show_page(hgr_page2);
 		memory.put(screen.lores, 0x0800);
-		screen.lores.show_page(pages[2]);
+		screen.lores.show_page(lgr_page2);
 	} else {
 		memory.put(screen.hires, 0x2000);
 		screen.hires.show_page(hgr_page1);
 		memory.put(screen.lores, 0x0400);
-		screen.lores.show_page(pages[1]);
+		screen.lores.show_page(lgr_page1);
 	}
 	screen_mode_change();
 }
@@ -168,33 +163,26 @@ void setup() {
 	display.setScreen(CHAR_WIDTH * CHARS_PER_LINE, CHAR_HEIGHT * SCREEN_LINES);
 	display.clear();
 
-	DBG_INI("RAM:    %dkB at 0x0000", RAM_PAGES);
 	for (unsigned i = 0; i < 8; i++)
-		memory.put(pages[i], i * ram<>::page_size);
+		memory.put(sys[i], i * ram<>::page_size);
 	memory.put(hgr_page1, 0x2000);
 	memory.put(hgr_page2, 0x4000);
-	for (unsigned i = 8; i < RAM_PAGES-16; i++)
-		memory.put(pages[i], (i + 16) * ram<>::page_size);
 
 #if defined(USE_SPIRAM)
-	DBG_INI("SpiRAM: %dkB at 0x%04x", SPIRAM_EXTENT / 1024, SPIRAM_BASE);
-	memory.put(sram, SPIRAM_BASE, SPIRAM_EXTENT);
+	memory.put(user, 0x6000);
+#else
+	memory.put(user, 0x6000);
 #endif
 
-	memory.put(switches, 0xc000);
+	systemio.put(switches, 0x0000);
+	memory.put(systemio, 0xc000);
 	memory.put(disk.bootprom, 0xc600);
 	memory.put(monitor, 0xf800);
 
 #if defined(APPLE_II)
-	memory.put(basic1, 0xe000);
-	memory.put(basic2, 0xe800);
-	memory.put(basic3, 0xf000);
+	memory.put(basic, 0xe000);
 #elif defined(APPLE_II_PLUS)
-	memory.put(basic1, 0xd000);
-	memory.put(basic2, 0xd800);
-	memory.put(basic3, 0xe000);
-	memory.put(basic4, 0xe800);
-	memory.put(basic5, 0xf000);
+	memory.put(basic, 0xd000);
 #endif
 
 	kbd.register_fnkey_handler(function_key);
