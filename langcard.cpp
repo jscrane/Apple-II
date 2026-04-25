@@ -29,10 +29,7 @@ LanguageCard::operator uint8_t() {
 	if (_read_rom)
 		return _acc < 10240? pgm_read_byte(applesoft_basic + _acc): pgm_read_byte(autostart_monitor + _acc - 10240);
 
-	if (_acc < 4096)
-		return _current_bank[_acc];
-
-	return _main[_acc - 4096];
+	return _acc < 4096? _current_bank[_acc]: _main[_acc - 4096];
 }
 
 void LanguageCard::Switches::any_access(uint8_t offset) {
