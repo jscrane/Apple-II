@@ -16,3 +16,10 @@ LanguageCard::operator uint8_t() {
 
 	return _acc < 10240? pgm_read_byte(applesoft_basic + _acc): pgm_read_byte(autostart_monitor + _acc - 10240);
 }
+
+void LanguageSwitches::operator=(uint8_t b) {
+}
+
+LanguageSwitches::operator uint8_t() {
+	return 0;
+}

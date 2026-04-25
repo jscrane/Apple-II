@@ -39,6 +39,7 @@ Memory::address langaddr = 0xd000;
 #elif defined(LANGUAGE_CARD)
 #include "langcard.h"
 LanguageCard language;
+LanguageSwitches langswitches(language);
 Memory::address langaddr = 0xd000;
 #endif
 
@@ -185,12 +186,12 @@ void setup() {
 	systemio.put(switches, 0x0000);
 	memory.put(systemio, 0xc000);
 	memory.put(disk.bootprom, 0xc600);
+	memory.put(language, langaddr);
 
 #if defined(LANGUAGE_CARD)
-	memory.put(language, langaddr);
+	systemio.put(langswitches, 0x0080);
 #else
 	memory.put(monitor, 0xf800);
-	memory.put(language, langaddr);
 #endif
 
 	kbd.register_fnkey_handler(function_key);
