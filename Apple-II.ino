@@ -39,7 +39,7 @@ Memory::address langaddr = 0xd000;
 #elif defined(LANGUAGE_CARD)
 #include "langcard.h"
 LanguageCard language;
-LanguageSwitches langswitches(language);
+LanguageCard::Switches langswitches(language);
 Memory::address langaddr = 0xd000;
 #endif
 
