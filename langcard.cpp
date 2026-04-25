@@ -1,3 +1,5 @@
+#include <stdint.h>
+
 #include <machine.h>
 #include <memory.h>
 #include <compat.h>
@@ -6,9 +8,6 @@
 #include "firmware/applesoft_basic.h"
 #include "firmware/autostart_monitor.h"
 #include "langcard.h"
-
-LanguageCard::LanguageCard(): Memory::Device(12288), _read_rom(true), _current_bank(_bank0) {
-}
 
 void LanguageCard::operator=(uint8_t b) {
 
@@ -36,7 +35,7 @@ LanguageCard::operator uint8_t() {
 	return _main[_acc - 4096];
 }
 
-void LanguageCard::Switches::access(uint8_t offset) {
+void LanguageCard::Switches::any_access(uint8_t offset) {
 
 	DBG_MEM("access: %02x", offset);
 
