@@ -39,7 +39,7 @@ Memory::address langaddr = 0xd000;
 #elif defined(LANGUAGE_CARD)
 #include "langcard.h"
 LanguageCard language;
-LanguageCard::Switches langswitches(language);
+LanguageCard::Switches lang_switches(language);
 Memory::address langaddr = 0xd000;
 #endif
 
@@ -56,7 +56,8 @@ Screen screen(display);
 SoftSwitches switches;
 Memory::Devices systemio;
 Input input(kbd, files);
-Disk disk(DISK_SLOT, memory, drive1, drive2);
+Disk disk(memory, drive1, drive2);
+Disk::Switches disk_switches(cpu, disk);
 
 #define FLASH_INTERVAL	250000
 
@@ -121,10 +122,6 @@ static void reset(bool sd) {
 
 	switches.on_access_speaker([]() { digitalWrite(PWM_SOUND, !digitalRead(PWM_SOUND)); });
 
-	cpu.set_illegal_instruction_handler([]() {
-		disk.on_illegal_instruction(cpu.pc());
-		cpu.resume();
-	});
 	machine.set_cpu_debugging(debug_never);
 
 	if (!sd) {
@@ -184,12 +181,13 @@ void setup() {
 #endif
 
 	systemio.put(switches, 0x0000);
+	systemio.put(disk_switches, 0x0080 + DISK_SLOT*0x10);
 	memory.put(systemio, 0xc000);
 	memory.put(disk.bootprom, 0xc600);
 	memory.put(language, langaddr);
 
 #if defined(LANGUAGE_CARD)
-	systemio.put(langswitches, 0x0080);
+	systemio.put(lang_switches, 0x0080);
 #else
 	memory.put(monitor, 0xf800);
 #endif
