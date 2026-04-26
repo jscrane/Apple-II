@@ -155,7 +155,6 @@ static const uint8_t reverse_sector_map[] = {
 
 uint8_t Disk::boot1() {
 
-	// ROM address (BOOT0)
 	uint8_t sector = reverse_sector_map[_memory[SECTOR]];
 	uint8_t track = _memory[TRACK];
 	Memory::address data_ptr = _memory[DATAPTR] | (_memory[DATAPTR+1] << 8);
@@ -232,6 +231,7 @@ uint8_t Disk::boot2(Memory::address rwts) {
 }
 
 Disk::Switches::operator uint8_t() {
+
 	switch (_acc & 0x0f) {
 	case 0x00:
 		return _disk.boot1();

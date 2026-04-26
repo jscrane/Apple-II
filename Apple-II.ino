@@ -175,7 +175,7 @@ void setup() {
 	memory.put(hgr_page2, 0x4000);
 	memory.put(user, 0x6000);
 
-	systemio.put(switches, 0x0000);
+	systemio.put(switches, 0x00);
 	systemio.put(disk_switches, soft_switches_offset(DISKII_SLOT));
 	memory.put(systemio, 0xc000);
 	memory.put(disk.bootprom, 0xc600);
