@@ -1,22 +1,22 @@
 #pragma once
 
-class Disk {
+class DiskII {
 public:
-	Disk(Memory &memory, flash_file &driveA, flash_file &driveB);
-	void reset();
+	DiskII(Memory &memory, flash_file &driveA, flash_file &driveB);
+	void reset() { _boot = 0; }
 
 	prom bootprom;
 
 	class Switches: public Memory::Device {
 	public:
-		Switches(CPU &cpu, Disk &disk): Memory::Device(16), _cpu(cpu), _disk(disk) {}
+		Switches(CPU &cpu, DiskII &disk): Memory::Device(16), _cpu(cpu), _disk(disk) {}
 
 		operator uint8_t() override;
 		void operator=(uint8_t) override {}
 
 	private:
 		CPU &_cpu;
-		Disk &_disk;
+		DiskII &_disk;
 	};
 
 private:

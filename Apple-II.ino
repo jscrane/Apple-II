@@ -56,8 +56,8 @@ Screen screen(display);
 SoftSwitches switches;
 Memory::Devices systemio;
 Input input(kbd, files);
-Disk disk(memory, drive1, drive2);
-Disk::Switches disk_switches(cpu, disk);
+DiskII disk(memory, drive1, drive2);
+DiskII::Switches disk_switches(cpu, disk);
 
 #define FLASH_INTERVAL	250000
 

@@ -116,23 +116,19 @@ static const uint8_t diskboot[] PROGMEM = {
 	0x4c, 0x00, 0xe0,	// jmp $e000
 };
 
-Disk::Disk(Memory &memory, flash_file &drive1, flash_file &drive2):
+DiskII::DiskII(Memory &memory, flash_file &drive1, flash_file &drive2):
 	bootprom(diskboot, sizeof(diskboot)), _memory(memory)
 {
 	_drives[0] = &drive1;
 	_drives[1] = &drive2;
 }
 
-void Disk::reset() {
-	_boot = 0;
-}
-
-void Disk::seek(flash_file *drive, uint8_t trk, uint8_t sec) {
+void DiskII::seek(flash_file *drive, uint8_t trk, uint8_t sec) {
 
 	drive->seek(BYTES_PER_SECTOR * (sec + trk * SECTORS_PER_TRACK));
 }
 
-uint16_t Disk::read(flash_file *drive, Memory::address addr, uint16_t bytes) {
+uint16_t DiskII::read(flash_file *drive, Memory::address addr, uint16_t bytes) {
 
 	uint16_t i;
 	for (i = 0; i < bytes && drive->more(); i++)
@@ -140,7 +136,7 @@ uint16_t Disk::read(flash_file *drive, Memory::address addr, uint16_t bytes) {
 	return i;
 }
 
-uint16_t Disk::write(flash_file *drive, Memory::address addr, uint16_t bytes) {
+uint16_t DiskII::write(flash_file *drive, Memory::address addr, uint16_t bytes) {
 
 	uint16_t i;
 	for (i = 0; i < bytes; i++)
@@ -153,7 +149,7 @@ static const uint8_t reverse_sector_map[] = {
 	11, 3, 10, 2, 9, 1, 8, 15
 };
 
-uint8_t Disk::boot1() {
+uint8_t DiskII::boot1() {
 
 	uint8_t sector = reverse_sector_map[_memory[SECTOR]];
 	uint8_t track = _memory[TRACK];
@@ -186,7 +182,7 @@ uint8_t Disk::boot1() {
 	return 0x00;
 }
 
-uint8_t Disk::boot2(Memory::address rwts) {
+uint8_t DiskII::boot2(Memory::address rwts) {
 		
 	Memory::address iobp = _memory[IOBP] | (_memory[IOBP+1] << 8);
 	uint8_t drive_id = _memory[iobp + 0x02] - 1;
@@ -230,7 +226,7 @@ uint8_t Disk::boot2(Memory::address rwts) {
 	return 0x00;
 }
 
-Disk::Switches::operator uint8_t() {
+DiskII::Switches::operator uint8_t() {
 
 	switch (_acc & 0x0f) {
 	case 0x00:
