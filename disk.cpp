@@ -11,6 +11,8 @@
 #include <filer.h>
 #include <flash_filer.h>
 
+#include "config.h"
+#include "softswitches.h"
 #include "disk.h"
 
 // geometry
@@ -36,9 +38,11 @@
 #define TRACK	0x41
 #define SECTOR	0x3d
 #define DATAPTR	0x26
-#define STATUS	0x48	// used to return error in BOOT0 if no disk present
 #define IOBP	0x48
 #define SLOTIDX	0x2b
+
+const uint8_t sw0 = soft_switches_offset(DISKII_SLOT);
+const uint8_t sw1 = sw0 + 1;
 
 // the disk is accessed for the first time with PR #6 "permanent redirect to slot #6"
 static const uint8_t diskboot[] PROGMEM = {
@@ -102,7 +106,7 @@ static const uint8_t diskboot[] PROGMEM = {
 
 	// .org $c65c ReadSector
 				// :another
-	0xad, 0xe0, 0xc0,	// lda $c0e0
+	0xad, sw0, 0xc0,	// lda $c0e0
 	0xd0, 0x10,		// bne :abort
 	0xe6, DATAPTR+1,	// inc data_ptr+1
 	0xe6, SECTOR,		// inc sector
@@ -152,7 +156,7 @@ static const uint8_t reverse_sector_map[] = {
 	11, 3, 10, 2, 9, 1, 8, 15
 };
 
-uint8_t Disk::boot0() {
+uint8_t Disk::boot1() {
 
 	// ROM address (BOOT0)
 	uint8_t sector = reverse_sector_map[_memory[SECTOR]];
@@ -178,7 +182,7 @@ uint8_t Disk::boot0() {
 		// 3D02:85 49          STA IOBPH       ;I/O CONTROL BLOCK (IOB)
 		//
 		_memory[0x3d04] = 0xad;		// lda $c0e1 (soft-switch #1)
-		_memory[0x3d05] = 0xe1;
+		_memory[0x3d05] = sw1;
 		_memory[0x3d06] = 0xc0;
 		_memory[0x3d07] = 0x18;		// clc (= success)
 		_memory[0x3d08] = 0x60;		// rts
@@ -233,11 +237,12 @@ uint8_t Disk::boot2(Memory::address rwts) {
 Disk::Switches::operator uint8_t() {
 	switch (_acc & 0x0f) {
 	case 0x00:
-		return _disk.boot0();
+		return _disk.boot1();
 	case 0x01:
 		// $3d00 is RWTS in BOOT2, $bd00 is same, after relocation
 		return _disk.boot2(_cpu.pc() & 0xff00);
 	}
+	DBG_DISK("unhandled switch %04x", _acc);
 	return 0x01;	// error
 }
 

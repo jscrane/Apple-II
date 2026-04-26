@@ -20,7 +20,7 @@ public:
 	};
 
 private:
-	uint8_t boot0();
+	uint8_t boot1();
 	uint8_t boot2(Memory::address rwts);
 
 	void seek(flash_file *drive, uint8_t trk, uint8_t sec);

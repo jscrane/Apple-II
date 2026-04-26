@@ -181,13 +181,13 @@ void setup() {
 #endif
 
 	systemio.put(switches, 0x0000);
-	systemio.put(disk_switches, 0x0080 + DISK_SLOT*0x10);
+	systemio.put(disk_switches, soft_switches_offset(DISKII_SLOT));
 	memory.put(systemio, 0xc000);
 	memory.put(disk.bootprom, 0xc600);
 	memory.put(language, langaddr);
 
 #if defined(LANGUAGE_CARD)
-	systemio.put(lang_switches, 0x0080);
+	systemio.put(lang_switches, soft_switches_offset(LANGCARD_SLOT));
 #else
 	memory.put(monitor, 0xf800);
 #endif
