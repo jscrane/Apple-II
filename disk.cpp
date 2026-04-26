@@ -41,9 +41,6 @@
 #define IOBP	0x48
 #define SLOTIDX	0x2b
 
-const uint8_t sw0 = soft_switches_offset(DISKII_SLOT);
-const uint8_t sw1 = sw0 + 1;
-
 // the disk is accessed for the first time with PR #6 "permanent redirect to slot #6"
 static const uint8_t diskboot[] PROGMEM = {
 
@@ -106,7 +103,7 @@ static const uint8_t diskboot[] PROGMEM = {
 
 	// .org $c65c ReadSector
 				// :another
-	0xad, sw0, 0xc0,	// lda $c0e0
+	0xad, 0xe0, 0xc0,	// lda $c0e0
 	0xd0, 0x10,		// bne :abort
 	0xe6, DATAPTR+1,	// inc data_ptr+1
 	0xe6, SECTOR,		// inc sector
@@ -182,7 +179,7 @@ uint8_t Disk::boot1() {
 		// 3D02:85 49          STA IOBPH       ;I/O CONTROL BLOCK (IOB)
 		//
 		_memory[0x3d04] = 0xad;		// lda $c0e1 (soft-switch #1)
-		_memory[0x3d05] = sw1;
+		_memory[0x3d05] = 0xe1;
 		_memory[0x3d06] = 0xc0;
 		_memory[0x3d07] = 0x18;		// clc (= success)
 		_memory[0x3d08] = 0x60;		// rts

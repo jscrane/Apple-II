@@ -173,12 +173,7 @@ void setup() {
 		memory.put(sys[i], i * ram<>::page_size);
 	memory.put(hgr_page1, 0x2000);
 	memory.put(hgr_page2, 0x4000);
-
-#if defined(USE_SPIRAM)
 	memory.put(user, 0x6000);
-#else
-	memory.put(user, 0x6000);
-#endif
 
 	systemio.put(switches, 0x0000);
 	systemio.put(disk_switches, soft_switches_offset(DISKII_SLOT));
