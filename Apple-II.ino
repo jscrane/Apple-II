@@ -7,6 +7,7 @@
 #include "softswitches.h"
 #include "input.h"
 #include "disk.h"
+#include "smartport.h"
 
 Memory memory;
 r6502 cpu(memory);
@@ -56,8 +57,12 @@ Screen screen(display);
 SoftSwitches switches;
 Memory::Devices systemio;
 Input input(kbd, files);
+
 DiskII disk(memory, drive1, drive2);
 DiskII::Switches disk_switches(cpu, disk);
+
+SmartPort smartport(memory, drive1, drive2);
+SmartPort::Switches smartport_switches(cpu, smartport);
 
 #define FLASH_INTERVAL	250000
 
@@ -165,6 +170,10 @@ void setup() {
 
 	machine.begin();
 
+	systemio.put(switches, 0x00);
+	systemio.put(disk_switches, soft_switches_offset(DISKII_SLOT));
+	systemio.put(smartport_switches, soft_switches_offset(SMARTPORT_SLOT));
+
 	display.begin(BG_COLOUR, FG_COLOUR, ORIENT);
 	display.setScreen(CHAR_WIDTH * CHARS_PER_LINE, CHAR_HEIGHT * SCREEN_LINES);
 	display.clear();
@@ -175,8 +184,6 @@ void setup() {
 	memory.put(hgr_page2, 0x4000);
 	memory.put(user, 0x6000);
 
-	systemio.put(switches, 0x00);
-	systemio.put(disk_switches, soft_switches_offset(DISKII_SLOT));
 	memory.put(systemio, 0xc000);
 	memory.put(disk.bootprom, 0xc600);
 	memory.put(language, langaddr);

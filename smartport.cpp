@@ -16,6 +16,18 @@
 #include "softswitches.h"
 #include "smartport.h"
 
+#define BLOCK_SIZE	512
+
+#define CMD_STATUS	0
+#define CMD_READ_BLOCK	1
+#define CMD_WRITE_BLOCK	2
+
+#define NO_ERROR	0x00
+#define IO_ERROR	0x27
+#define NO_DEVICE	0x28
+#define WRITE_PROT	0x2b
+#define OFFLINE		0x2f
+
 static const uint8_t diskboot[] PROGMEM = {
 
 	0x4c, 0x20, 0xc7,	// JMP $C720 ($c701 is $20 for ID #1)
@@ -30,14 +42,13 @@ static const uint8_t diskboot[] PROGMEM = {
 	0xad, 0xf1, 0xc0,	//	LDA $C0F1	(softswitch #1)
 	0xf0, 0x05,		//	BEQ OK
 	0x38,			//	SEC
-	0xa9, 0x27,		//	LDA #$27
 	0x60,			//	RTS
 	0x18,			// OK:	CLC
 	0x60,			//	RTS
 
 	0x00, 0x00, 0x00, 0x00,	// padding
 	0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00,
 
 	// $c720: BOOT entry point
 	0xad, 0xf0, 0xc0,	//	LDA $C0F0	(softswitch #0)
@@ -79,17 +90,81 @@ static const uint8_t diskboot[] PROGMEM = {
 	0x0b,		// entry-point low byte ($c70b)
 };
 
-SmartPort::SmartPort(Memory &memory, flash_file &hd): bootprom(diskboot, sizeof(diskboot)), _memory(memory), _hd(hd)
+SmartPort::SmartPort(Memory &memory, flash_file &hd1, flash_file &hd2):
+	bootprom(diskboot, sizeof(diskboot)), _memory(memory), _hd1(hd1), _hd2(hd2)
 {
 }
 
 uint8_t SmartPort::boot() {
-	// FIXME
-	return 0x01;
+
+	DBG_DISK("smartport: boot");
+
+	if (_hd1)
+		read_block(_hd1, 0, 0x800);
+
+	return (bool)_hd1;
 }
 
-uint8_t SmartPort::mli(uint8_t cmd) {
-	// FIXME
+uint16_t SmartPort::read_block(flash_file &drive, uint32_t block, Memory::address dest) {
+
+	drive.seek(block * BLOCK_SIZE);
+
+	uint16_t i;
+
+	for (i = 0; i < BLOCK_SIZE && drive.more(); i++)
+		_memory[dest++] = drive.read();
+
+	return i;
+}
+
+uint16_t SmartPort::write_block(flash_file &drive, uint32_t block, Memory::address src) {
+
+	drive.seek(block * BLOCK_SIZE);
+
+	uint16_t i;
+
+	for (i = 0; i < BLOCK_SIZE; i++)
+		drive.write(_memory[src++]);
+
+	return i;
+}
+
+uint8_t SmartPort::mli(uint8_t cmd, Memory::address params) {
+
+	uint8_t unit = _memory[params+1];
+	flash_file &drive = (unit & 0x80)? _hd2: _hd1;
+	Memory::address ptr = _memory[params+2] | (_memory[params+3] << 8);
+	uint32_t block = _memory[params+4] | (_memory[params+5] << 8) | (_memory[params+6] << 16);
+
+	DBG_DISK("smartport: mli: %02x %04x %d", unit, ptr, block);
+	if (!drive)
+		return OFFLINE;
+
+	switch (cmd) {
+	case CMD_READ_BLOCK:
+		if (BLOCK_SIZE != read_block(drive, block, ptr)) {
+			DBG_DISK("smartport: read_block failed");
+			return IO_ERROR;
+		}
+		return NO_ERROR;
+
+	case CMD_WRITE_BLOCK:
+		if (BLOCK_SIZE != write_block(drive, block, ptr)) {
+			DBG_DISK("smartport: write_block failed");
+			return IO_ERROR;
+		}
+		return NO_ERROR;
+
+	case CMD_STATUS:
+		uint32_t blocks = drive.size() / BLOCK_SIZE;
+		_memory[ptr] = 0xf8;			// drive type: block device, removable, etc.
+		_memory[ptr+1] = blocks & 0xff;		// block count low
+		_memory[ptr+2] = (blocks >> 8) & 0xff;	// block count mid
+		_memory[ptr+3] = (blocks >> 16) & 0xff;	// block count high
+		return NO_ERROR;
+	}
+
+	DBG_DISK("smartport: unknown command: %d", cmd);
 	return 0x01;
 }
 
@@ -99,7 +174,7 @@ SmartPort::Switches::operator uint8_t() {
 	case 0x00:
 		return _sp.boot();
 	case 0x01:
-		return _sp.mli(_cpu.a());
+		return _sp.mli(_cpu.a(), (_cpu.y() << 8) | _cpu.x());
 	};
 
 	DBG_DISK("smartport: unknown switch: %x", _acc);
