@@ -77,12 +77,13 @@ static const uint8_t diskboot[] PROGMEM = {
 	0x0a,			// asl A
 	0x85, SLOTIDX,		// sta slot_index
 	0xaa,			// tax
-	0xbd, 0x8e, 0xc0,	// lda IWM_Q7_OFF,x
-	0xbd, 0x8c, 0xc0,	// lda IWM_Q6_OFF,x
-	0xbd, 0x8a, 0xc0,	// lda IWM_SEL_DRIVE_1,x
-	0xbd, 0x89, 0xc0,	// lda IWM_MOTOR_ON,x
+	// replaced with NOPs (to avoid hitting soft-switches)
+	0xea, 0xea, 0xea,	// lda IWM_Q7_OFF,x
+	0xea, 0xea, 0xea,	// lda IWM_Q6_OFF,x
+	0xea, 0xea, 0xea,	// lda IWM_SEL_DRIVE_1,x
+	0xea, 0xea, 0xea,	// lda IWM_MOTOR_ON,x
 				// "Blind-seek to track 0."
-	0xea, 0xea,		// commented-out for speed
+	0xea, 0xea,		// replaced with NOPs
 				// :seek_loop
 	0xea, 0xea, 0xea,
 	0xea,
@@ -101,9 +102,9 @@ static const uint8_t diskboot[] PROGMEM = {
 	0xa9, 0x08,		// lda #>BOOT1
 	0x85, DATAPTR+1,	// sta data_ptr+1
 
-	// .org $c65c ReadSector
+	// .org $c65c ReadSector (don't change: this is called from BOOT1)
 				// :another
-	0xad, 0xe0, 0xc0,	// lda $c0e0
+	0xbd, 0x80, 0xc0,	// lda $c080,x
 	0xd0, 0x10,		// bne :abort
 	0xe6, DATAPTR+1,	// inc data_ptr+1
 	0xe6, SECTOR,		// inc sector
@@ -173,8 +174,8 @@ uint8_t DiskII::boot1() {
 		// 3D00:84 48          STY IOBPL       ;UPON ENTRY, A&Y POINT AT THE
 		// 3D02:85 49          STA IOBPH       ;I/O CONTROL BLOCK (IOB)
 		//
-		_memory[0x3d04] = 0xad;		// lda $c0e1 (soft-switch #1)
-		_memory[0x3d05] = 0xe1;
+		_memory[0x3d04] = 0xad;		// lda $c0n1 (soft-switch #1)
+		_memory[0x3d05] = 0x81 + 16*DISKII_SLOT;
 		_memory[0x3d06] = 0xc0;
 		_memory[0x3d07] = 0x18;		// clc (= success)
 		_memory[0x3d08] = 0x60;		// rts
