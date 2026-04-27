@@ -4,7 +4,8 @@
 //#define APPLE_II_PLUS
 #define LANGUAGE_CARD
 
-#define DISK_SLOT	6
+#define LANGCARD_SLOT	0
+#define DISKII_SLOT	6
 
 #define BG_COLOUR	BLACK
 #define FG_COLOUR	WHITE

@@ -4,12 +4,15 @@
 
 #include <machine.h>
 #include <memory.h>
+#include <CPU.h>
 #include <prom.h>
 #include <debugging.h>
 #include <serialio.h>
 #include <filer.h>
 #include <flash_filer.h>
 
+#include "config.h"
+#include "softswitches.h"
 #include "disk.h"
 
 // geometry
@@ -35,7 +38,6 @@
 #define TRACK	0x41
 #define SECTOR	0x3d
 #define DATAPTR	0x26
-#define STATUS	0x48	// used to return error in BOOT0 if no disk present
 #define IOBP	0x48
 #define SLOTIDX	0x2b
 
@@ -75,12 +77,13 @@ static const uint8_t diskboot[] PROGMEM = {
 	0x0a,			// asl A
 	0x85, SLOTIDX,		// sta slot_index
 	0xaa,			// tax
-	0xbd, 0x8e, 0xc0,	// lda IWM_Q7_OFF,x
-	0xbd, 0x8c, 0xc0,	// lda IWM_Q6_OFF,x
-	0xbd, 0x8a, 0xc0,	// lda IWM_SEL_DRIVE_1,x
-	0xbd, 0x89, 0xc0,	// lda IWM_MOTOR_ON,x
+	// replaced with NOPs (to avoid hitting soft-switches)
+	0xea, 0xea, 0xea,	// lda IWM_Q7_OFF,x
+	0xea, 0xea, 0xea,	// lda IWM_Q6_OFF,x
+	0xea, 0xea, 0xea,	// lda IWM_SEL_DRIVE_1,x
+	0xea, 0xea, 0xea,	// lda IWM_MOTOR_ON,x
 				// "Blind-seek to track 0."
-	0xea, 0xea,		// commented-out for speed
+	0xea, 0xea,		// replaced with NOPs
 				// :seek_loop
 	0xea, 0xea, 0xea,
 	0xea,
@@ -99,10 +102,9 @@ static const uint8_t diskboot[] PROGMEM = {
 	0xa9, 0x08,		// lda #>BOOT1
 	0x85, DATAPTR+1,	// sta data_ptr+1
 
-	// .org $c65c ReadSector
+	// .org $c65c ReadSector (don't change: this is called from BOOT1)
 				// :another
-	0x02,			// illegal instruction
-	0xa5, STATUS,		// lda status
+	0xbd, 0x80, 0xc0,	// lda $c080,x
 	0xd0, 0x10,		// bne :abort
 	0xe6, DATAPTR+1,	// inc data_ptr+1
 	0xe6, SECTOR,		// inc sector
@@ -115,23 +117,19 @@ static const uint8_t diskboot[] PROGMEM = {
 	0x4c, 0x00, 0xe0,	// jmp $e000
 };
 
-Disk::Disk(uint8_t slot, Memory &memory, flash_file &drive1, flash_file &drive2):
-	bootprom(diskboot, sizeof(diskboot)), _memory(memory), _base(0xc000 + slot * 0x100)
+DiskII::DiskII(Memory &memory, flash_file &drive1, flash_file &drive2):
+	bootprom(diskboot, sizeof(diskboot)), _memory(memory)
 {
 	_drives[0] = &drive1;
 	_drives[1] = &drive2;
 }
 
-void Disk::reset() {
-	_boot = 0;
-}
-
-void Disk::seek(flash_file *drive, uint8_t trk, uint8_t sec) {
+void DiskII::seek(flash_file *drive, uint8_t trk, uint8_t sec) {
 
 	drive->seek(BYTES_PER_SECTOR * (sec + trk * SECTORS_PER_TRACK));
 }
 
-uint16_t Disk::read(flash_file *drive, Memory::address addr, uint16_t bytes) {
+uint16_t DiskII::read(flash_file *drive, Memory::address addr, uint16_t bytes) {
 
 	uint16_t i;
 	for (i = 0; i < bytes && drive->more(); i++)
@@ -139,7 +137,7 @@ uint16_t Disk::read(flash_file *drive, Memory::address addr, uint16_t bytes) {
 	return i;
 }
 
-uint16_t Disk::write(flash_file *drive, Memory::address addr, uint16_t bytes) {
+uint16_t DiskII::write(flash_file *drive, Memory::address addr, uint16_t bytes) {
 
 	uint16_t i;
 	for (i = 0; i < bytes; i++)
@@ -152,80 +150,93 @@ static const uint8_t reverse_sector_map[] = {
 	11, 3, 10, 2, 9, 1, 8, 15
 };
 
-void Disk::on_illegal_instruction(Memory::address addr) {
+uint8_t DiskII::boot1() {
 
-	if (addr == _base + 0x5c) {
-		// ROM address (BOOT0)
-		uint8_t sector = reverse_sector_map[_memory[SECTOR]];
-		uint8_t track = _memory[TRACK];
-		Memory::address data_ptr = _memory[DATAPTR] | (_memory[DATAPTR+1] << 8);
+	uint8_t sector = reverse_sector_map[_memory[SECTOR]];
+	uint8_t track = _memory[TRACK];
+	Memory::address data_ptr = _memory[DATAPTR] | (_memory[DATAPTR+1] << 8);
 
-		DBG_DISK("boot1: (%d) %02x %02x %04x", _boot, track, sector, data_ptr);
-		flash_file *drive = _drives[0];
-		if (!*drive) {
-			_memory[STATUS] = 0x01;		// error: abort
-			return;
-		}
-		_memory[STATUS] = 0x00;
-		seek(drive, track, sector);
-		read(drive, data_ptr, BYTES_PER_SECTOR);
-		_boot++;
+	DBG_DISK("boot1: (%d) %02x %02x %04x", _boot, track, sector, data_ptr);
+	flash_file *drive = _drives[0];
+	if (!*drive)
+		return 0x01;
 
-		if (_boot == 11) {
-			// now we've read the first sector (BOOT0) _and_
-			// the first 10 sectors (BOOT1). from now on
-			// DOS will call RWTS (at $3d00), so patch that.
-			//
-			// RWTS begins with this, so keep it:
-			// 3D00:84 48          STY IOBPL       ;UPON ENTRY, A&Y POINT AT THE
-			// 3D02:85 49          STA IOBPH       ;I/O CONTROL BLOCK (IOB)
-			//
-			_memory[0x3d04] = 0x02;		// illegal
-			_memory[0x3d05] = 0x18;		// clc (= success)
-			_memory[0x3d06] = 0x60;		// rts
-		}
-	} else if (addr == 0x3d04 || addr == 0xbd04) {
-		// $3d00 is RWTS in BOOT2, $bd00 is same, after relocation
-		Memory::address rwts = (addr & 0xff00);
-		Memory::address iobp = _memory[IOBP] | (_memory[IOBP+1] << 8);
-		uint8_t drive_id = _memory[iobp + 0x02] - 1;
-		uint8_t vol = _memory[iobp + 0x03];
-		uint8_t track = _memory[iobp + 0x04];
-		uint8_t sector = _memory[iobp + 0x05];
-		uint8_t cmd = _memory[iobp + 0x0c];
-		Memory::address buf = _memory[iobp + 8] | (_memory[iobp + 9] << 8);
-		DBG_DISK("boot2: cmd=%d drive=%d vol=%d %02x %02x %04x", cmd, drive_id, vol, track, sector, buf);
+	seek(drive, track, sector);
+	read(drive, data_ptr, BYTES_PER_SECTOR);
+	_boot++;
 
-		flash_file *drive = _drives[drive_id];
-		if (!*drive) {
-			_memory[iobp + 0x0d] = DRIVE_ERROR;
-			_memory[rwts + 0x05] = 0x38;	// sec (= error)
-			return;
-		}
-		if (vol != 0 && vol != _vols[drive_id]) {
-			_memory[iobp + 0x0d] = VOLUME_ERROR;
-			_memory[iobp + 0x0e] = _vols[drive_id];
-			_memory[rwts + 0x05] = 0x38;	// sec (= error)
-			return;
-		}
-
-		seek(drive, track, sector);
-		if (cmd == CMD_READ) {
-			read(drive, buf, BYTES_PER_SECTOR);
-			if (track == 17 && sector == 0)
-				_vols[drive_id] = _memory[buf + 6];
-
-		} else if (cmd == CMD_WRITE) {
-			if (track == 17 && sector == 0)
-				_vols[drive_id] = _memory[buf + 6];
-			write(drive, buf, BYTES_PER_SECTOR);
-
-		} else if (cmd != CMD_SEEK && cmd != CMD_FORMAT)
-			DBG_DISK("unhandled command %d", cmd);
-
-		_memory[iobp + 0x0d] = NO_ERROR;
-		_memory[iobp + 0x0e] = _vols[drive_id];
-		_memory[rwts + 0x05] = 0x18;		// clc (= success)
-	} else
-		DBG_DISK("unhandled illegal instruction: %04x", addr);
+	if (_boot == 11) {
+		// now we've read the first sector (BOOT0) _and_
+		// the first 10 sectors (BOOT1). from now on
+		// DOS will call RWTS (at $3d00), so patch that.
+		//
+		// RWTS begins with this, so keep it:
+		// 3D00:84 48          STY IOBPL       ;UPON ENTRY, A&Y POINT AT THE
+		// 3D02:85 49          STA IOBPH       ;I/O CONTROL BLOCK (IOB)
+		//
+		_memory[0x3d04] = 0xad;		// lda $c0n1 (soft-switch #1)
+		_memory[0x3d05] = 0x81 + 16*DISKII_SLOT;
+		_memory[0x3d06] = 0xc0;
+		_memory[0x3d07] = 0x18;		// clc (= success)
+		_memory[0x3d08] = 0x60;		// rts
+	}
+	return 0x00;
 }
+
+uint8_t DiskII::boot2(Memory::address rwts) {
+		
+	Memory::address iobp = _memory[IOBP] | (_memory[IOBP+1] << 8);
+	uint8_t drive_id = _memory[iobp + 0x02] - 1;
+	uint8_t vol = _memory[iobp + 0x03];
+	uint8_t track = _memory[iobp + 0x04];
+	uint8_t sector = _memory[iobp + 0x05];
+	uint8_t cmd = _memory[iobp + 0x0c];
+	Memory::address buf = _memory[iobp + 8] | (_memory[iobp + 9] << 8);
+	DBG_DISK("boot2: cmd=%d drive=%d vol=%d %02x %02x %04x", cmd, drive_id, vol, track, sector, buf);
+
+	flash_file *drive = _drives[drive_id];
+	if (!*drive) {
+		_memory[iobp + 0x0d] = DRIVE_ERROR;
+		_memory[rwts + 0x07] = 0x38;	// sec (= error)
+		return 0x01;
+	}
+	if (vol != 0 && vol != _vols[drive_id]) {
+		_memory[iobp + 0x0d] = VOLUME_ERROR;
+		_memory[iobp + 0x0e] = _vols[drive_id];
+		_memory[rwts + 0x07] = 0x38;	// sec (= error)
+		return 0x01;
+	}
+
+	seek(drive, track, sector);
+	if (cmd == CMD_READ) {
+		read(drive, buf, BYTES_PER_SECTOR);
+		if (track == 17 && sector == 0)
+			_vols[drive_id] = _memory[buf + 6];
+
+	} else if (cmd == CMD_WRITE) {
+		if (track == 17 && sector == 0)
+			_vols[drive_id] = _memory[buf + 6];
+		write(drive, buf, BYTES_PER_SECTOR);
+
+	} else if (cmd != CMD_SEEK && cmd != CMD_FORMAT)
+		DBG_DISK("unhandled command %d", cmd);
+
+	_memory[iobp + 0x0d] = NO_ERROR;
+	_memory[iobp + 0x0e] = _vols[drive_id];
+	_memory[rwts + 0x07] = 0x18;		// clc (= success)
+	return 0x00;
+}
+
+DiskII::Switches::operator uint8_t() {
+
+	switch (_acc & 0x0f) {
+	case 0x00:
+		return _disk.boot1();
+	case 0x01:
+		// $3d00 is RWTS in BOOT2, $bd00 is same, after relocation
+		return _disk.boot2(_cpu.pc() & 0xff00);
+	}
+	DBG_DISK("unhandled switch %04x", _acc);
+	return 0x01;	// error
+}
+
