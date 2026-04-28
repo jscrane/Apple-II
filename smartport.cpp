@@ -13,7 +13,6 @@
 #include <flash_filer.h>
 
 #include "config.h"
-#include "softswitches.h"
 #include "smartport.h"
 
 // https://github.com/Bad-Mango-Solutions/back-pocket-basic/blob/main/specs/os/SmartPort%20Specification.md
