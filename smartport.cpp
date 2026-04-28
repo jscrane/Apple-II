@@ -242,5 +242,10 @@ uint8_t SmartPort::Switches::_boot1_wrapper() {
 	Memory::address ptr = mem[0x44] | (mem[0x45] << 8);
 	uint16_t block = mem[0x46] | (mem[0x47] << 8);
 
+	for (int i=0; i < 16; i++) {
+		Memory::address a = 0x28ce + i;
+		DBG_DISK("%04x %02x ", a, (uint8_t)mem[a]);
+	}
+
 	return _sp.boot1(cmd, unit, ptr, block);
 }
