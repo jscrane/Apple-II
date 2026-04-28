@@ -127,7 +127,11 @@ static void reset(bool sd) {
 
 	switches.on_access_speaker([]() { digitalWrite(PWM_SOUND, !digitalRead(PWM_SOUND)); });
 
-	machine.set_cpu_debugging(debug_never);
+	/*
+	machine.set_cpu_debugging([]() { return (cpu.pc() >= 0xc700 && cpu.pc() < 0xc800)
+					|| (cpu.pc() >= 0x0800 && cpu.pc() < 0x0a00); });
+	machine.set_cpu_debugging([]() { return (cpu.pc() >= 0xc700 && cpu.pc() < 0xc800); });
+	*/
 
 	if (!sd) {
 		DBG_EMU("No SD Card");
@@ -166,6 +170,8 @@ static void function_key(uint8_t fn) {
 	file_status();
 }
 
+inline Memory::address slot_address(int slot_id) { return 0xc000 + 0x100 * slot_id; }
+
 void setup() {
 
 	machine.begin();
@@ -185,7 +191,8 @@ void setup() {
 	memory.put(user, 0x6000);
 
 	memory.put(systemio, 0xc000);
-	memory.put(disk.bootprom, 0xc600);
+	memory.put(disk.bootprom, slot_address(DISKII_SLOT));
+	memory.put(smartport.bootprom, slot_address(SMARTPORT_SLOT));
 	memory.put(language, langaddr);
 
 #if defined(LANGUAGE_CARD)

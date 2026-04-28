@@ -16,6 +16,7 @@
 #include "softswitches.h"
 #include "smartport.h"
 
+// https://github.com/Bad-Mango-Solutions/back-pocket-basic/blob/main/specs/os/SmartPort%20Specification.md
 #define BLOCK_SIZE	512
 
 #define CMD_STATUS	0
@@ -23,6 +24,8 @@
 #define CMD_WRITE_BLOCK	2
 
 #define NO_ERROR	0x00
+#define BAD_COMMAND	0x01
+#define BAD_UNIT	0x21
 #define IO_ERROR	0x27
 #define NO_DEVICE	0x28
 #define WRITE_PROT	0x2b
@@ -106,7 +109,7 @@ uint8_t SmartPort::boot() {
 	}
 
 	if (BLOCK_SIZE != read_block(_hd1, 0, 0x0800)) {
-		DBG_DISK("smartport: failed to read boot block");
+		DBG_DISK("smartport: failed to read boot block 0");
 		return 0x01;
 	}
 
@@ -147,8 +150,10 @@ uint8_t SmartPort::mli(uint8_t cmd, Memory::address params) {
 	uint32_t block = _memory[params+4] | (_memory[params+5] << 8) | (_memory[params+6] << 16);
 
 	DBG_DISK("smartport: mli: %02x %04x %d", unit, ptr, block);
-	if (!drive)
+	if (!drive) {
+		DBG_DISK("smartport: no file");
 		return OFFLINE;
+	}
 
 	switch (cmd) {
 	case CMD_READ_BLOCK:
@@ -175,7 +180,7 @@ uint8_t SmartPort::mli(uint8_t cmd, Memory::address params) {
 	}
 
 	DBG_DISK("smartport: unknown command: %d", cmd);
-	return 0x01;
+	return BAD_COMMAND;
 }
 
 SmartPort::Switches::operator uint8_t() {
