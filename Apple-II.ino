@@ -127,6 +127,8 @@ static void reset(bool sd) {
 
 	switches.on_access_speaker([]() { digitalWrite(PWM_SOUND, !digitalRead(PWM_SOUND)); });
 
+	machine.set_cpu_debugging(debug_never);
+
 	if (!sd) {
 		DBG_EMU("No SD Card");
 		display.status("No SD Card");
