@@ -2,6 +2,13 @@
 
 Emulates an Apple-][ with 48kB of RAM with [r65emu](https://github.com/jscrane/r65emu).
 
+Features
+--------
+- Display modes: Text, Low resolution graphics and High resolution graphics
+- Disk-II: `.dsk` files in Slot #6
+- SmartPort: `.po` files in Slot #7
+- Language Card: Slot #0
+
 Keyboard
 --------
 - F1 (^N): reset
