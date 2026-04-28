@@ -6,6 +6,7 @@
 
 #define LANGCARD_SLOT	0
 #define DISKII_SLOT	6
+#define SMARTPORT_SLOT	7
 
 #define BG_COLOUR	BLACK
 #define FG_COLOUR	WHITE

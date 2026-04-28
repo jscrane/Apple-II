@@ -65,5 +65,3 @@ private:
 
 	bool text, mixed, page2, hires;
 };
-
-inline uint8_t soft_switches_offset(uint8_t slot_id) { return 0x80 + slot_id * 0x10; }
