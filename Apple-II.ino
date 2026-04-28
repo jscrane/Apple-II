@@ -127,9 +127,9 @@ static void reset(bool sd) {
 
 	switches.on_access_speaker([]() { digitalWrite(PWM_SOUND, !digitalRead(PWM_SOUND)); });
 
+	/*
 	machine.set_cpu_debugging([]() { return (cpu.pc() >= 0xc700 && cpu.pc() < 0xc800)
 					|| (cpu.pc() >= 0x2000 && cpu.pc() < 0x2900); });
-	/*
 	machine.set_cpu_debugging([]() { return (cpu.pc() >= 0xc700 && cpu.pc() < 0xc800); });
 	machine.set_cpu_debugging([]() { return cpu.pc() >= 0x2000 && cpu.pc() < 0x2900; });
 	*/

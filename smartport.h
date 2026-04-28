@@ -14,7 +14,7 @@ public:
 		void operator=(uint8_t) override {}
 
 	private:
-		uint8_t _boot1_wrapper();
+		uint8_t _driver_wrapper();
 
 		r6502 &_cpu;
 		SmartPort &_sp;
@@ -22,7 +22,7 @@ public:
 
 private:
 	uint8_t boot();
-	uint8_t boot1(uint8_t op, uint8_t unit, Memory::address ptr, uint16_t block);
+	uint8_t driver(uint8_t op, uint8_t unit, Memory::address ptr, uint16_t block);
 	uint8_t mli(uint8_t op, Memory::address params);
 
 	uint16_t read_block(flash_file &drive, uint32_t block, Memory::address dest);

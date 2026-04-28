@@ -17,6 +17,7 @@
 #include "smartport.h"
 
 // https://github.com/Bad-Mango-Solutions/back-pocket-basic/blob/main/specs/os/SmartPort%20Specification.md
+#define ROM_PAGE	(0xc0 + SMARTPORT_SLOT)
 #define BLOCK_SIZE	512
 
 #define CMD_STATUS	0
@@ -36,7 +37,7 @@
 
 static const uint8_t diskboot[] PROGMEM = {
 
-	0x4c, 0x20, 0xc7,	// JMP $C720 ($c701 is $20 for ID #1)
+	0x4c, 0x20, ROM_PAGE,	// JMP $Cn20 ($cn01 is $20 for ID #1)
 	0x00,			// ID #2
 	0xff,			// junk
 	0x03,			// ID #3
@@ -45,7 +46,7 @@ static const uint8_t diskboot[] PROGMEM = {
 	0x00, 0x00, 0x00,	// padding
 	0x00, 0x00,
 
-	// $c70d: block driver entry point
+	// $Cn0D: block driver entry point
 	0xad, 0xf1, 0xc0,	//	LDA $C0F1	(softswitch #1)
 	0xf0, 0x03,		//	BEQ OK
 	0x38,			//	SEC
@@ -59,7 +60,7 @@ static const uint8_t diskboot[] PROGMEM = {
 	0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00,
 
-	// $c720: boot entry point
+	// $Cn20: boot entry point
 	0xad, 0xf0, 0xc0,	//	LDA $C0F0	(softswitch #0)
 	0xf0, 0x03,		//	BEQ OK
 	0x4c, 0x00, 0xc6,	//	JMP $C600
@@ -67,7 +68,7 @@ static const uint8_t diskboot[] PROGMEM = {
 	0xa2, 16*SMARTPORT_SLOT,//	LDX #$70
 	0x4c, 0x01, 0x08,	// 	JMP $0801
 
-	// padding from $c72d to $c7fc
+	// padding from $Cn2D to $CnFC
 	0x00, 0x00, 0x00,					// $c72d
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,		// $c730
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,		// $c738
@@ -189,9 +190,9 @@ uint8_t SmartPort::mli(uint8_t cmd, Memory::address params) {
 	return BAD_COMMAND;
 }
 
-uint8_t SmartPort::boot1(uint8_t cmd, uint8_t unit, Memory::address ptr, uint16_t block) {
+uint8_t SmartPort::driver(uint8_t cmd, uint8_t unit, Memory::address ptr, uint16_t block) {
 
-	DBG_DISK("smartport: boot1: %02x %02x %04x %04x", cmd, unit, ptr, block);
+	DBG_DISK("smartport: driver: %02x %02x %04x %04x", cmd, unit, ptr, block);
 
 	flash_file &drive = (unit & 0x80)? _hd2: _hd1;
 	if (!drive) {
@@ -225,14 +226,14 @@ SmartPort::Switches::operator uint8_t() {
 	case 0x00:
 		return _sp.boot();
 	case 0x01:
-		return _boot1_wrapper();
+		return _driver_wrapper();
 	};
 
 	DBG_DISK("smartport: unknown switch: %x", _acc);
 	return 0x01;	// error
 }
 
-uint8_t SmartPort::Switches::_boot1_wrapper() {
+uint8_t SmartPort::Switches::_driver_wrapper() {
 
 	Memory &mem = _cpu.memory();
 	mem[RETURN_X] = _cpu.x();
@@ -248,5 +249,5 @@ uint8_t SmartPort::Switches::_boot1_wrapper() {
 		DBG_DISK("%04x %02x ", a, (uint8_t)mem[a]);
 	}
 
-	return _sp.boot1(cmd, unit, ptr, block);
+	return _sp.driver(cmd, unit, ptr, block);
 }
