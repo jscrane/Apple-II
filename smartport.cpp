@@ -18,6 +18,8 @@
 
 // https://github.com/Bad-Mango-Solutions/back-pocket-basic/blob/main/specs/os/SmartPort%20Specification.md
 #define ROM_PAGE	(0xc0 + SMARTPORT_SLOT)
+#define SLOT_OFFSET	(0x10 * SMARTPORT_SLOT)
+#define SSWITCH(n)	(0x80 + SLOT_OFFSET + n)
 #define BLOCK_SIZE	512
 
 #define CMD_STATUS	0
@@ -47,7 +49,7 @@ static const uint8_t diskboot[] PROGMEM = {
 	0x00, 0x00,
 
 	// $Cn0D: block driver entry point
-	0xad, 0xf1, 0xc0,	//	LDA $C0F1	(softswitch #1)
+	0xad, SSWITCH(1), 0xc0,	//	LDA $C0F1	(softswitch #1)
 	0xf0, 0x03,		//	BEQ OK
 	0x38,			//	SEC
 	0x60,			//	RTS
@@ -57,15 +59,14 @@ static const uint8_t diskboot[] PROGMEM = {
 	0x60,			//	RTS
 
 	// padding
-	0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 
 	// $Cn20: boot entry point
-	0xad, 0xf0, 0xc0,	//	LDA $C0F0	(softswitch #0)
+	0xad, SSWITCH(0), 0xc0,	//	LDA $C0F0	(softswitch #0)
 	0xf0, 0x03,		//	BEQ OK
 	0x4c, 0x00, 0xc6,	//	JMP $C600
 				// OK:
-	0xa2, 16*SMARTPORT_SLOT,//	LDX #$70
+	0xa2, SLOT_OFFSET,	//	LDX #$70
 	0x4c, 0x01, 0x08,	// 	JMP $0801
 
 	// padding from $Cn2D to $CnFC
@@ -147,16 +148,11 @@ uint16_t SmartPort::write_block(flash_file &drive, uint32_t block, Memory::addre
 	return i;
 }
 
-uint8_t SmartPort::mli(uint8_t cmd, Memory::address params) {
+uint8_t SmartPort::block_driver(uint8_t cmd, uint8_t unit, Memory::address ptr, uint16_t block) {
 
-	DBG_DISK("smartport: mli: %d %04x", cmd, params);
+	DBG_DISK("smartport: block_driver: %02x %02x %04x %04x", cmd, unit, ptr, block);
 
-	uint8_t unit = _memory[params+1];
 	flash_file &drive = (unit & 0x80)? _hd2: _hd1;
-	Memory::address ptr = _memory[params+2] | (_memory[params+3] << 8);
-	uint32_t block = _memory[params+4] | (_memory[params+5] << 8) | (_memory[params+6] << 16);
-
-	DBG_DISK("smartport: mli: %02x %04x %d", unit, ptr, block);
 	if (!drive) {
 		DBG_DISK("smartport: no file");
 		return OFFLINE;
@@ -179,37 +175,6 @@ uint8_t SmartPort::mli(uint8_t cmd, Memory::address params) {
 
 	case CMD_STATUS:
 		uint32_t blocks = drive.size() / BLOCK_SIZE;
-		_memory[ptr] = 0xf8;			// drive type: block device, removable, etc.
-		_memory[ptr+1] = blocks & 0xff;		// block count low
-		_memory[ptr+2] = (blocks >> 8) & 0xff;	// block count mid
-		_memory[ptr+3] = (blocks >> 16) & 0xff;	// block count high
-		return NO_ERROR;
-	}
-
-	DBG_DISK("smartport: unknown command: %d", cmd);
-	return BAD_COMMAND;
-}
-
-uint8_t SmartPort::driver(uint8_t cmd, uint8_t unit, Memory::address ptr, uint16_t block) {
-
-	DBG_DISK("smartport: driver: %02x %02x %04x %04x", cmd, unit, ptr, block);
-
-	flash_file &drive = (unit & 0x80)? _hd2: _hd1;
-	if (!drive) {
-		DBG_DISK("smartport: no file");
-		return OFFLINE;
-	}
-
-	switch (cmd) {
-	case CMD_READ_BLOCK:
-		if (BLOCK_SIZE != read_block(drive, block, ptr)) {
-			DBG_DISK("smartport: read_block failed");
-			return IO_ERROR;
-		}
-		return NO_ERROR;
-
-	case CMD_STATUS:
-		uint32_t blocks = drive.size() / BLOCK_SIZE;
 		_memory[RETURN_X] = blocks & 0xff;
 		_memory[RETURN_Y] = (blocks >> 8) & 0xff;
 		return NO_ERROR;
@@ -226,14 +191,14 @@ SmartPort::Switches::operator uint8_t() {
 	case 0x00:
 		return _sp.boot();
 	case 0x01:
-		return _driver_wrapper();
+		return _block_driver_wrapper();
 	};
 
 	DBG_DISK("smartport: unknown switch: %x", _acc);
 	return 0x01;	// error
 }
 
-uint8_t SmartPort::Switches::_driver_wrapper() {
+uint8_t SmartPort::Switches::_block_driver_wrapper() {
 
 	Memory &mem = _cpu.memory();
 	mem[RETURN_X] = _cpu.x();
@@ -244,10 +209,5 @@ uint8_t SmartPort::Switches::_driver_wrapper() {
 	Memory::address ptr = mem[0x44] | (mem[0x45] << 8);
 	uint16_t block = mem[0x46] | (mem[0x47] << 8);
 
-	for (int i=0; i < 16; i++) {
-		Memory::address a = 0x28ce + i;
-		DBG_DISK("%04x %02x ", a, (uint8_t)mem[a]);
-	}
-
-	return _sp.driver(cmd, unit, ptr, block);
+	return _sp.block_driver(cmd, unit, ptr, block);
 }
