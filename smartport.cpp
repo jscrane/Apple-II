@@ -41,10 +41,11 @@ static const uint8_t diskboot[] PROGMEM = {
 	0xff,			// junk
 	0x03,			// ID #3
 	0x00,			// junk
-	0x00,			// ID #4 (should be 0x3c for autoboot)
+	0x01,			// ID #4 (should be 0x3c for autoboot)
 	0x00, 0x00, 0x00,	// padding
+	0x00, 0x00,
 
-	// $c70b: MLI entry point
+	// $c70d: block driver entry point
 	0xad, 0xf1, 0xc0,	//	LDA $C0F1	(softswitch #1)
 	0xf0, 0x03,		//	BEQ OK
 	0x38,			//	SEC
@@ -55,10 +56,10 @@ static const uint8_t diskboot[] PROGMEM = {
 	0x60,			//	RTS
 
 	// padding
-	0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00,
 
-	// $c720: BOOT entry point
+	// $c720: boot entry point
 	0xad, 0xf0, 0xc0,	//	LDA $C0F0	(softswitch #0)
 	0xf0, 0x03,		//	BEQ OK
 	0x4c, 0x00, 0xc6,	//	JMP $C600
@@ -96,7 +97,7 @@ static const uint8_t diskboot[] PROGMEM = {
 	0x00, 0x00, 0x00, 0x00, 				// $c7F8
 	0x00, 0x00,	// total blocks (0x0000 means: "ask via status")
 	0x83,		// status byte (bits: 0=writeable, 1=readable, 7=removable)
-	0x0b,		// entry-point low byte ($c70b)
+	0x0d,		// entry-point low byte ($c70d)
 };
 
 SmartPort::SmartPort(Memory &memory, flash_file &hd1, flash_file &hd2):
