@@ -31,6 +31,9 @@
 #define WRITE_PROT	0x2b
 #define OFFLINE		0x2f
 
+#define RETURN_X	0xeb
+#define RETURN_Y	0xec
+
 static const uint8_t diskboot[] PROGMEM = {
 
 	0x4c, 0x20, 0xc7,	// JMP $C720 ($c701 is $20 for ID #1)
@@ -43,13 +46,15 @@ static const uint8_t diskboot[] PROGMEM = {
 
 	// $c70b: MLI entry point
 	0xad, 0xf1, 0xc0,	//	LDA $C0F1	(softswitch #1)
-	0xf0, 0x05,		//	BEQ OK
+	0xf0, 0x03,		//	BEQ OK
 	0x38,			//	SEC
 	0x60,			//	RTS
 	0x18,			// OK:	CLC
+	0xa6, RETURN_X,		//	LDX $EB
+	0xa4, RETURN_Y,		//	LDY $EC
 	0x60,			//	RTS
 
-	0x00, 0x00, 0x00, 0x00,	// padding
+	// padding
 	0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00,
 
@@ -58,7 +63,7 @@ static const uint8_t diskboot[] PROGMEM = {
 	0xf0, 0x03,		//	BEQ OK
 	0x4c, 0x00, 0xc6,	//	JMP $C600
 				// OK:
-	0xa2, 0x70,		// 	LDX #$70
+	0xa2, 16*SMARTPORT_SLOT,//	LDX #$70
 	0x4c, 0x01, 0x08,	// 	JMP $0801
 
 	// padding from $c72d to $c7fc
@@ -183,6 +188,35 @@ uint8_t SmartPort::mli(uint8_t cmd, Memory::address params) {
 	return BAD_COMMAND;
 }
 
+uint8_t SmartPort::boot1(uint8_t cmd, uint8_t unit, Memory::address ptr, uint16_t block) {
+
+	DBG_DISK("smartport: boot1: %02x %02x %04x %04x", cmd, unit, ptr, block);
+
+	flash_file &drive = (unit & 0x80)? _hd2: _hd1;
+	if (!drive) {
+		DBG_DISK("smartport: no file");
+		return OFFLINE;
+	}
+
+	switch (cmd) {
+	case CMD_READ_BLOCK:
+		if (BLOCK_SIZE != read_block(drive, block, ptr)) {
+			DBG_DISK("smartport: read_block failed");
+			return IO_ERROR;
+		}
+		return NO_ERROR;
+
+	case CMD_STATUS:
+		uint32_t blocks = drive.size() / BLOCK_SIZE;
+		_memory[RETURN_X] = blocks & 0xff;
+		_memory[RETURN_Y] = (blocks >> 8) & 0xff;
+		return NO_ERROR;
+	}
+
+	DBG_DISK("smartport: unknown command: %d", cmd);
+	return BAD_COMMAND;
+}
+
 SmartPort::Switches::operator uint8_t() {
 
 	DBG_DISK("smartport: switch: %x", _acc);
@@ -190,9 +224,23 @@ SmartPort::Switches::operator uint8_t() {
 	case 0x00:
 		return _sp.boot();
 	case 0x01:
-		return _sp.mli(_cpu.a(), (_cpu.y() << 8) | _cpu.x());
+		return _boot1_wrapper();
 	};
 
 	DBG_DISK("smartport: unknown switch: %x", _acc);
 	return 0x01;	// error
+}
+
+uint8_t SmartPort::Switches::_boot1_wrapper() {
+
+	Memory &mem = _cpu.memory();
+	mem[RETURN_X] = _cpu.x();
+	mem[RETURN_Y] = _cpu.y();
+
+	uint8_t cmd = mem[0x42];
+	uint8_t unit = mem[0x43];
+	Memory::address ptr = mem[0x44] | (mem[0x45] << 8);
+	uint16_t block = mem[0x46] | (mem[0x47] << 8);
+
+	return _sp.boot1(cmd, unit, ptr, block);
 }
