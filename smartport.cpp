@@ -35,7 +35,7 @@ static const uint8_t diskboot[] PROGMEM = {
 	0xff,			// junk
 	0x03,			// ID #3
 	0x00,			// junk
-	0x3c,			// ID #4
+	0x00,			// ID #4 (should be 0x3c for autoboot)
 	0x00, 0x00, 0x00,	// padding
 
 	// $c70b: MLI entry point
@@ -52,13 +52,14 @@ static const uint8_t diskboot[] PROGMEM = {
 
 	// $c720: BOOT entry point
 	0xad, 0xf0, 0xc0,	//	LDA $C0F0	(softswitch #0)
-	0xd0, 0x04,		//	BNE ABORT
-	0x4c, 0x01, 0x80,	//	JMP $0800
-	0x4c, 0x00, 0xe0,	// ABORT:
-				// 	JMP $E000
+	0xf0, 0x03,		//	BEQ OK
+	0x4c, 0x00, 0xc6,	//	JMP $C600
+				// OK:
+	0xa2, 0x70,		// 	LDX #$70
+	0x4c, 0x01, 0x08,	// 	JMP $0801
 
-	// padding from $c72b to $c7fc
-	0x00, 0x00, 0x00, 0x00, 0x00,				// $c72b
+	// padding from $c72d to $c7fc
+	0x00, 0x00, 0x00,					// $c72d
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,		// $c730
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,		// $c738
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,		// $c740
@@ -86,7 +87,7 @@ static const uint8_t diskboot[] PROGMEM = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,		// $c7F0
 	0x00, 0x00, 0x00, 0x00, 				// $c7F8
 	0x00, 0x00,	// total blocks (0x0000 means: "ask via status")
-	0x03,		// status byte (bits 0 & 1 set means: "device is on and readable")
+	0x83,		// status byte (bits: 0=writeable, 1=readable, 7=removable)
 	0x0b,		// entry-point low byte ($c70b)
 };
 
@@ -99,10 +100,17 @@ uint8_t SmartPort::boot() {
 
 	DBG_DISK("smartport: boot");
 
-	if (_hd1)
-		read_block(_hd1, 0, 0x800);
+	if (!_hd1) {
+		DBG_DISK("smartport: no boot device");
+		return 0x01;
+	}
 
-	return (bool)_hd1;
+	if (BLOCK_SIZE != read_block(_hd1, 0, 0x0800)) {
+		DBG_DISK("smartport: failed to read boot block");
+		return 0x01;
+	}
+
+	return 0x00;
 }
 
 uint16_t SmartPort::read_block(flash_file &drive, uint32_t block, Memory::address dest) {
@@ -130,6 +138,8 @@ uint16_t SmartPort::write_block(flash_file &drive, uint32_t block, Memory::addre
 }
 
 uint8_t SmartPort::mli(uint8_t cmd, Memory::address params) {
+
+	DBG_DISK("smartport: mli: %d %04x", cmd, params);
 
 	uint8_t unit = _memory[params+1];
 	flash_file &drive = (unit & 0x80)? _hd2: _hd1;
@@ -170,7 +180,8 @@ uint8_t SmartPort::mli(uint8_t cmd, Memory::address params) {
 
 SmartPort::Switches::operator uint8_t() {
 
-	switch (_acc) {
+	DBG_DISK("smartport: switch: %x", _acc);
+	switch (_acc & 0x0f) {
 	case 0x00:
 		return _sp.boot();
 	case 0x01:
