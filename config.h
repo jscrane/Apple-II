@@ -9,7 +9,7 @@
 #define DISKII_SLOT	6
 
 #define BG_COLOUR	BLACK
-#define FG_COLOUR	WHITE
+#define FG_COLOUR	0x5667
 
 //#define HIRES_MONO
 #define HIRES_COLOUR

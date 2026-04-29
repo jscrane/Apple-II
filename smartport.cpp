@@ -1,5 +1,6 @@
 #include <unistd.h>
 #include <stdint.h>
+#include <string.h>
 #include <pgmspace.h>
 
 #include <machine.h>
@@ -166,7 +167,7 @@ uint8_t SmartPort::block_driver(uint8_t cmd, uint8_t unit, Memory::address ptr, 
 
 	flash_file &drive = (unit & 0x80)? _hd2: _hd1;
 	if (!drive) {
-		DBG_DISK("smartport: no file");
+		DBG_DISK("smartport: no file: %02x", unit);
 		return OFFLINE;
 	}
 
@@ -193,7 +194,7 @@ uint8_t SmartPort::smartport_driver(uint8_t cmd, Memory::address params) {
 	uint8_t unit = _memory[params + 1];
 	flash_file &drive = (unit & 0x80)? _hd2: _hd1;
 	if (!drive) {
-		DBG_DISK("smartport: no file");
+		DBG_DISK("smartport: no file: %02x", unit);
 		return OFFLINE;
 	}
 
