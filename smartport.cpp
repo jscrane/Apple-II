@@ -44,7 +44,7 @@ static const uint8_t diskboot[] PROGMEM = {
 	0xff,			//	junk
 	0x03,			//	ID #3
 	0x00,			//	junk
-	0x01,			//	ID #4 (should be 0x00 for smartport)
+	0x00,			//	ID #4 (should be 0x00 for smartport)
 
 	// padding
 	0x00, 0x00, 0x00, 0x00, 0x00,
@@ -160,9 +160,9 @@ uint16_t SmartPort::write_block(flash_file &drive, uint32_t block, Memory::addre
 	return i;
 }
 
-uint8_t SmartPort::block_driver(uint8_t cmd, uint8_t unit, Memory::address ptr, uint16_t block) {
+uint8_t SmartPort::block_driver(uint8_t cmd, uint8_t unit, Memory::address ptr, uint32_t block) {
 
-	DBG_DISK("smartport: block_driver: %02x %02x %04x %04x", cmd, unit, ptr, block);
+	DBG_DISK("smartport: block_driver: %02x %02x %04x %d", cmd, unit, ptr, block);
 
 	flash_file &drive = (unit & 0x80)? _hd2: _hd1;
 	if (!drive) {
@@ -192,7 +192,44 @@ uint8_t SmartPort::block_driver(uint8_t cmd, uint8_t unit, Memory::address ptr, 
 		return NO_ERROR;
 	}
 
-	DBG_DISK("smartport: unknown command: %d", cmd);
+	DBG_DISK("smartport: block_driver: unknown command: %d", cmd);
+	return BAD_COMMAND;
+}
+
+uint8_t SmartPort::smartport_driver(uint8_t cmd, Memory::address params) {
+
+	uint8_t np = _memory[params];
+	uint8_t unit = _memory[params + 1];
+	flash_file &drive = (unit & 0x80)? _hd2: _hd1;
+	if (!drive) {
+		DBG_DISK("smartport: no file");
+		return OFFLINE;
+	}
+
+	switch (cmd) {
+	case CMD_STATUS:
+		return cmd_status(drive, params);
+	}
+
+	DBG_DISK("smartport: smartport_driver: unknown command: %d", cmd);
+	return BAD_COMMAND;
+}
+
+uint8_t SmartPort::cmd_status(flash_file &drive, Memory::address params) {
+
+	Memory::address status = _memory[params + 2] | (_memory[params + 3] << 8);
+	uint8_t code = _memory[params + 4];
+
+	if (code == 0x00) {
+		uint32_t blocks = drive.size() / BLOCK_SIZE;
+		_memory[status] = 0xf8;		// Block device | Write allowed | Read allowed | Device online | Format allowed
+		_memory[status + 1] = blocks & 0xff;
+		_memory[status + 2] = (blocks >> 8) & 0xff;
+		_memory[status + 3] = (blocks >> 16) & 0xff;
+		return NO_ERROR;
+	}
+
+	DBG_DISK("smartport: smartport_driver: unknown status command: %d", code);
 	return BAD_COMMAND;
 }
 
@@ -204,6 +241,8 @@ SmartPort::Switches::operator uint8_t() {
 		return _sp.boot();
 	case 0x01:
 		return _block_driver_wrapper();
+	case 0x02:
+		return _smartport_wrapper();
 	};
 
 	DBG_DISK("smartport: unknown switch: %x", _acc);
@@ -222,4 +261,20 @@ uint8_t SmartPort::Switches::_block_driver_wrapper() {
 	uint16_t block = mem[0x46] | (mem[0x47] << 8);
 
 	return _sp.block_driver(cmd, unit, ptr, block);
+}
+
+uint8_t SmartPort::Switches::_smartport_wrapper() {
+
+	uint8_t sp = _cpu.s();
+	Memory &mem = _cpu.memory();
+	Memory::address ret = mem[0x101 + sp] | (mem[0x102 + sp] << 8);
+
+	uint8_t cmd = mem[ret + 1];
+	Memory::address params = mem[ret + 2] | (mem[ret + 3] << 8);
+
+	ret += 3;
+	mem[0x101 + sp] = ret & 0xff;
+	mem[0x102 + sp] = (ret >> 8) & 0xff;
+
+	return _sp.smartport_driver(cmd, params);
 }

@@ -15,6 +15,7 @@ public:
 
 	private:
 		uint8_t _block_driver_wrapper();
+		uint8_t _smartport_wrapper();
 
 		r6502 &_cpu;
 		SmartPort &_sp;
@@ -22,8 +23,12 @@ public:
 
 private:
 	uint8_t boot();
-	uint8_t block_driver(uint8_t op, uint8_t unit, Memory::address ptr, uint16_t block);
+	uint8_t block_driver(uint8_t cmd, uint8_t unit, Memory::address ptr, uint32_t block);
 
+	uint8_t smartport_driver(uint8_t cmd, Memory::address params);
+	uint8_t cmd_status(flash_file &drive, Memory::address params);
+
+	// low-level interface
 	uint16_t read_block(flash_file &drive, uint32_t block, Memory::address dest);
 	uint16_t write_block(flash_file &drive, uint32_t block, Memory::address src);
 
