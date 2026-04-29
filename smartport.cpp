@@ -77,7 +77,7 @@ static const uint8_t diskboot[] PROGMEM = {
 
 	// $Cn30: block driver
 	0xad, SSWITCH(1), 0xc0,	//	LDA $C0F1	(softswitch #1)
-	0xf0, 0x03,		//	BEQ OK
+	0xf0, 0x02,		//	BEQ OK
 	0x38,			//	SEC
 	0x60,			//	RTS
 	0x18,			// OK:	CLC
