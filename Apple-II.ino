@@ -20,7 +20,7 @@ spiram::Block user(sram, 24576);
 #else
 ram<24576> user;
 #endif
-flash_filer files(PROGRAMS);
+flash_filer files(PROGRAMS, MAX_DEVICES);
 flash_file drive1(1), drive2(2);
 
 #if defined(APPLE_II)
@@ -107,7 +107,7 @@ static void flash_text() {
 
 static void file_status() {
 
-	static const char *device_names[MAX_FILES] = { "Tape:", "D1:", "D2:" };
+	static const char *device_names[MAX_DEVICES] = { "Tape:", "D1:", "D2:" };
 	const char *filename = files.filename();
 	display.statusf("%s%s", device_names[files.device()], filename? filename: "No file");
 }
@@ -139,6 +139,8 @@ static void reset(bool sd) {
 #if defined(APPLE_II)
 		display.status("Ctrl-B: BASIC");
 #else
+		for (int i = DEFAULT_DEVICE; i--; )
+			files.next_device();
 		file_status();
 #endif
 	}

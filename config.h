@@ -31,3 +31,7 @@
 #else
 #define PROGRAMS	"/"
 #endif
+
+// 0=Tape, 1=D1, 2=D2
+#define DEFAULT_DEVICE	1
+#define MAX_DEVICES	3
