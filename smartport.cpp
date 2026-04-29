@@ -198,7 +198,6 @@ uint8_t SmartPort::block_driver(uint8_t cmd, uint8_t unit, Memory::address ptr, 
 
 uint8_t SmartPort::smartport_driver(uint8_t cmd, Memory::address params) {
 
-	uint8_t np = _memory[params];
 	uint8_t unit = _memory[params + 1];
 	flash_file &drive = (unit & 0x80)? _hd2: _hd1;
 	if (!drive) {
@@ -209,6 +208,10 @@ uint8_t SmartPort::smartport_driver(uint8_t cmd, Memory::address params) {
 	switch (cmd) {
 	case CMD_STATUS:
 		return cmd_status(drive, params);
+	case CMD_READ_BLOCK:
+		return cmd_read_block(drive, params);
+	case CMD_WRITE_BLOCK:
+		return cmd_write_block(drive, params);
 	}
 
 	DBG_DISK("smartport: smartport_driver: unknown command: %d", cmd);
@@ -222,15 +225,58 @@ uint8_t SmartPort::cmd_status(flash_file &drive, Memory::address params) {
 
 	if (code == 0x00) {
 		uint32_t blocks = drive.size() / BLOCK_SIZE;
-		_memory[status] = 0xf8;		// Block device | Write allowed | Read allowed | Device online | Format allowed
+		_memory[status] = 0xf0;		// Block device | Write allowed | Read allowed | Device online
 		_memory[status + 1] = blocks & 0xff;
 		_memory[status + 2] = (blocks >> 8) & 0xff;
 		_memory[status + 3] = (blocks >> 16) & 0xff;
 		return NO_ERROR;
 	}
+	if (code == 0x03) {	// DIB
+		uint32_t blocks = drive.size() / BLOCK_SIZE;
+		_memory[status] = 0xf0;		// Block device | Write allowed | Read allowed | Device online
+		_memory[status + 1] = blocks & 0xff;
+		_memory[status + 2] = (blocks >> 8) & 0xff;
+		_memory[status + 3] = (blocks >> 16) & 0xff;
+
+		const char *name = "EMULATOR";
+		int n = strlen(name);
+		_memory[status + 4] = n;
+		for (int i = 0; i < n; i++)
+			_memory[status + 5 + i] = name[i];
+
+		_memory[status + 21] = 0x02;	// device type and subtype: Generic hard disk
+		_memory[status + 22] = 0x01;
+		_memory[status + 23] = 0x01;	// firmware version: major
+		_memory[status + 24] = 0x00;	// firmware version: minor
+		return NO_ERROR;
+	}
 
 	DBG_DISK("smartport: smartport_driver: unknown status command: %d", code);
 	return BAD_COMMAND;
+}
+
+uint8_t SmartPort::cmd_write_block(flash_file &drive, Memory::address params) {
+
+	Memory::address ptr = _memory[params + 2] | (_memory[params + 3] << 8);
+	uint32_t block = _memory[params + 4] | (_memory[params + 5] << 8) | (_memory[params + 6] << 16);
+
+	if (BLOCK_SIZE != write_block(drive, block, ptr)) {
+		DBG_DISK("smartport: write_block failed");
+		return IO_ERROR;
+	}
+	return NO_ERROR;
+}
+
+uint8_t SmartPort::cmd_read_block(flash_file &drive, Memory::address params) {
+
+	Memory::address ptr = _memory[params + 2] | (_memory[params + 3] << 8);
+	uint32_t block = _memory[params + 4] | (_memory[params + 5] << 8) | (_memory[params + 6] << 16);
+
+	if (BLOCK_SIZE != read_block(drive, block, ptr)) {
+		DBG_DISK("smartport: read_block failed");
+		return IO_ERROR;
+	}
+	return NO_ERROR;
 }
 
 SmartPort::Switches::operator uint8_t() {

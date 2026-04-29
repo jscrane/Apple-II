@@ -27,6 +27,8 @@ private:
 
 	uint8_t smartport_driver(uint8_t cmd, Memory::address params);
 	uint8_t cmd_status(flash_file &drive, Memory::address params);
+	uint8_t cmd_read_block(flash_file &drive, Memory::address params);
+	uint8_t cmd_write_block(flash_file &drive, Memory::address params);
 
 	// low-level interface
 	uint16_t read_block(flash_file &drive, uint32_t block, Memory::address dest);
