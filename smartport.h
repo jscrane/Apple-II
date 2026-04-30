@@ -26,7 +26,8 @@ private:
 	uint8_t block_driver(uint8_t cmd, uint8_t unit, Memory::address ptr, uint32_t block);
 
 	uint8_t smartport_driver(uint8_t cmd, Memory::address params);
-	uint8_t cmd_status(flash_file &drive, Memory::address params);
+	uint8_t cmd_status(flash_file &drive, Memory::address params, Memory::address status);
+	uint8_t cmd_bus_status(Memory::address params, Memory::address status);
 
 	Memory::address read_ptr(Memory::address a) { return _memory[a] | (_memory[a+1] << 8); }
 	uint32_t read_block(Memory::address a) { return _memory[a] | (_memory[a+1] << 8) | (_memory[a+2] << 16); }

@@ -44,9 +44,9 @@ static const uint8_t diskboot[] PROGMEM = {
 	// signature
 	0x4c, 0x20, ROM_PAGE,	//	JMP $Cn20 ($cn01 is $20 for ID #1)
 	0x00,			//	ID #2
-	xxxx,			//	junk
+	xxxx,			//
 	0x03,			//	ID #3 ("smart", block-based card)
-	xxxx,			//	junk
+	xxxx,			//
 	0x00,			//	ID #4 (should be 0x00 for smartport)
 
 	xxxx, xxxx, xxxx, xxxx, xxxx,
@@ -110,7 +110,7 @@ static const uint8_t diskboot[] PROGMEM = {
 	xxxx, xxxx, xxxx, xxxx, xxxx, xxxx, xxxx, xxxx,		// $c7F0
 	xxxx, xxxx, xxxx, xxxx, 				// $c7F8
 	0x00, 0x00,	// total blocks (0x0000 means: "ask via status")
-	0x83,		// status byte (bits: 0=writeable, 1=readable, 7=removable)
+	0x83,		// status byte (bits: 0=writeable, 1=readable, 2=writeable, 7=removable)
 	0x0d,		// entry-point low byte ($Cn0D)
 };
 
@@ -191,6 +191,12 @@ uint8_t SmartPort::block_driver(uint8_t cmd, uint8_t unit, Memory::address ptr, 
 uint8_t SmartPort::smartport_driver(uint8_t cmd, Memory::address params) {
 
 	uint8_t unit = _memory[params + 1];
+	Memory::address ptr = read_ptr(params + 2);
+
+	DBG_DISK("smartport_driver: cmd=%d nparams=%d unit=%d", cmd, (uint8_t)_memory[params], unit);
+	if (unit == 0)
+		return cmd_bus_status(params, ptr);
+
 	flash_file &drive = (unit & 0x80)? _hd2: _hd1;
 	if (!drive) {
 		DBG_DISK("smartport: no file: %02x", unit);
@@ -199,27 +205,35 @@ uint8_t SmartPort::smartport_driver(uint8_t cmd, Memory::address params) {
 
 	switch (cmd) {
 	case CMD_READ_BLOCK:
-		return read_block(drive, read_block(params + 4), read_ptr(params + 2));
+		return read_block(drive, read_block(params + 4), ptr);
 
 	case CMD_WRITE_BLOCK:
-		return write_block(drive, read_block(params + 4), read_ptr(params + 2));
+		return write_block(drive, read_block(params + 4), ptr);
 
 	case CMD_STATUS:
-		return cmd_status(drive, params);
+		return cmd_status(drive, params, ptr);
 	}
 
 	DBG_DISK("smartport: smartport_driver: unknown command: %d", cmd);
 	return BAD_COMMAND;
 }
 
-uint8_t SmartPort::cmd_status(flash_file &drive, Memory::address params) {
+uint8_t SmartPort::cmd_bus_status(Memory::address params, Memory::address status) {
+
+	DBG_DISK("cmd_bus_status");
+	_memory[status] = 0x02;		// 2 devices
+	_memory[status + 1] = 0;	// no interrupts
+	return NO_ERROR;
+}
+
+uint8_t SmartPort::cmd_status(flash_file &drive, Memory::address params, Memory::address status) {
 
 	uint8_t code = _memory[params + 4];
 
+	DBG_DISK("cmd_status: %d", code);
 	if (code == 0x00 || code == 0x03) {
 		uint32_t blocks = drive.size() / BLOCK_SIZE;
-		Memory::address status = read_ptr(params + 2);
-		_memory[status] = 0xf0;		// Block device | Write allowed | Read allowed | Device online
+		_memory[status] = 0xf1;		// Block device | Write allowed | Read allowed | Device online | Device open
 		_memory[status + 1] = blocks & 0xff;
 		_memory[status + 2] = (blocks >> 8) & 0xff;
 		_memory[status + 3] = (blocks >> 16) & 0xff;
