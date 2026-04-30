@@ -6,7 +6,7 @@ Features
 --------
 - Display modes: Text, Low resolution graphics and High resolution graphics
 - Language Card: Slot #0
-- SmartPort: `.po` files in Slot #5
+- SmartPort: `.po` and `.hdv` files in Slot #5
 - Disk-II: `.dsk` files in Slot #6
 
 Keyboard

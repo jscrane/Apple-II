@@ -5,4 +5,5 @@
 *.txt.mk
 serialout.txt
 littlefs.img
+littlefs.bin
 roms/

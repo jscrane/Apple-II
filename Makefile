@@ -30,7 +30,7 @@ endif
 
 ifeq ($t, rp2040)
 BOARD := adafruit_feather_dvi
-flash := 8388608_2097152
+flash := 8388608_4194304
 CPPFLAGS += -DUSE_HOST_KBD
 LIBRARIES += LittleFS PicoDVI
 endif

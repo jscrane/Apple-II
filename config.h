@@ -9,7 +9,7 @@
 #define DISKII_SLOT	6
 
 #define BG_COLOUR	BLACK
-#define FG_COLOUR	WHITE
+#define FG_COLOUR	0x5667
 
 //#define HIRES_MONO
 #define HIRES_COLOUR
@@ -31,3 +31,7 @@
 #else
 #define PROGRAMS	"/"
 #endif
+
+// 0=Tape, 1=D1, 2=D2
+#define DEFAULT_DEVICE	1
+#define MAX_DEVICES	3
