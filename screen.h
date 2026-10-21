@@ -21,6 +21,10 @@ public:
 
 	operator uint8_t() override { return _ram->get(_acc); }
 
+	void checkpoint(Checkpoint &) override { /* FIXME */ }
+
+	void restore(Checkpoint &) override { /* FIXME */ }
+
 protected:
 	Resolution(): Memory::Device(N) {}
 

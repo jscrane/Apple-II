@@ -8,6 +8,9 @@ public:
 	virtual void operator= (uint8_t) { toggle(); }
 	virtual operator uint8_t ();
 
+	void checkpoint(Checkpoint &) override { /* FIXME */ }
+	void restore(Checkpoint &) override { /* FIXME */ }
+
 	static const uint8_t KEYBOARD_DATA = 0x00;
 	static const uint8_t KEYBOARD_CLEAR_STROBE = 0x10;
 

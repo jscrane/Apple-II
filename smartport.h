@@ -13,6 +13,9 @@ public:
 		operator uint8_t() override;
 		void operator=(uint8_t) override {}
 
+		void checkpoint(Checkpoint &) override { /* FIXME */ }
+		void restore(Checkpoint &) override { /* FIXME */ }
+
 	private:
 		uint8_t _block_driver_wrapper();
 		uint8_t _smartport_wrapper();
