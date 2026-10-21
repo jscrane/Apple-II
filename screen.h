@@ -81,11 +81,16 @@ private:
 
 class Hires: public Resolution<8192> {
 public:
-	using Resolution<8192>::operator=; // bring the base operator into scope to prevent hiding
+	using Base = Resolution<8192>;
+	using Base::operator=;
 
 	Hires(Display &display): _display(display) {}
 
 	void redraw(uint8_t rowstart, uint8_t rowend);
+
+	void checkpoint(Checkpoint &c) override;
+
+	void restore(Checkpoint &c) override;
 
 private:
 	void on_set(uint8_t) override;

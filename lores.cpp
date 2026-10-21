@@ -148,6 +148,8 @@ void Lores::flash_text(bool flash_is_inverse) {
 }
 
 void Lores::checkpoint(Checkpoint &c) {
+
+	DBG_EMU("lores: checkpoint: %d", c.pos());
 	Base::checkpoint(c);
 	c.write(_flashrows);
 	c.write(_top_text);
@@ -155,6 +157,8 @@ void Lores::checkpoint(Checkpoint &c) {
 }
 
 void Lores::restore(Checkpoint &c) {
+
+	DBG_EMU("lores: restore: %d", c.pos());
 	Base::restore(c);
 	c.read(_flashrows);
 	c.read(_top_text);

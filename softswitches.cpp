@@ -104,6 +104,8 @@ SoftSwitches::operator uint8_t() {
 }
 
 void SoftSwitches::checkpoint(Checkpoint &c) {
+
+	DBG_EMU("softswitches: checkpoint %d", c.pos());
 	c.write(text);
 	c.write(mixed);
 	c.write(page2);
@@ -111,6 +113,8 @@ void SoftSwitches::checkpoint(Checkpoint &c) {
 }
 
 void SoftSwitches::restore(Checkpoint &c) {
+
+	DBG_EMU("softswitches: restore %d", c.pos());
 	c.read(text);
 	c.read(mixed);
 	c.read(page2);
