@@ -47,7 +47,8 @@ protected:
 
 class Lores: public Resolution<1024> {
 public:
-	using Resolution<1024>::operator=; // bring the base operator into scope to prevent hiding
+	using Base = Resolution<1024>;
+	using Base::operator=;
 
 	Lores(Display &display): _display(display) {}
 

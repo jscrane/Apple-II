@@ -148,14 +148,14 @@ void Lores::flash_text(bool flash_is_inverse) {
 }
 
 void Lores::checkpoint(Checkpoint &c) {
-	Resolution<1024>::checkpoint(c);
+	Base::checkpoint(c);
 	c.write(_flashrows);
 	c.write(_top_text);
 	c.write(_btm_text);
 }
 
 void Lores::restore(Checkpoint &c) {
-	Resolution<1024>::restore(c);
+	Base::restore(c);
 	c.read(_flashrows);
 	c.read(_top_text);
 	c.read(_btm_text);
