@@ -14,8 +14,8 @@ public:
 		operator uint8_t() override;
 		void operator=(uint8_t) override {}
 
-		void checkpoint(Checkpoint &) override { /* FIXME */ }
-		void restore(Checkpoint &) override { /* FIXME */ }
+		void checkpoint(Checkpoint &) override {}
+		void restore(Checkpoint &) override {}
 
 	private:
 		CPU &_cpu;

@@ -102,3 +102,17 @@ SoftSwitches::operator uint8_t() {
 	DBG_EMU("SoftSwitches::operator uint8_t unregistered handler for: %02x", _acc);
 	return 0;
 }
+
+void SoftSwitches::checkpoint(Checkpoint &c) {
+	c.write(text);
+	c.write(mixed);
+	c.write(page2);
+	c.write(hires);
+}
+
+void SoftSwitches::restore(Checkpoint &c) {
+	c.read(text);
+	c.read(mixed);
+	c.read(page2);
+	c.read(hires);
+}

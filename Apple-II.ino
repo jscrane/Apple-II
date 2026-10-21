@@ -66,10 +66,6 @@ SmartPort::Switches smartport_switches(cpu, smartport);
 
 #define FLASH_INTERVAL	250000
 
-static void screen_mode_change() {
-	screen.on_mode_change(switches.screen_mode());
-}
-
 // Lores watches memory regions $400 or $800 depending on page
 // Hires watches memory regions $2000 or $4000 depending on page
 // (because of mixed mode, additional guards are needed to prevent
@@ -92,7 +88,20 @@ static void screen_page_change() {
 		memory.put(screen.lores, 0x0400);
 		screen.lores.show_page(lgr_page1);
 	}
+}
+
+static void screen_mode_change() {
+	screen.on_mode_change(switches.screen_mode());
+}
+
+static void screen_page_and_mode_change() {
+	screen_page_change();
 	screen_mode_change();
+}
+
+static void after_restore() {
+	screen_page_change();
+	screen.redraw(switches.screen_mode());
 }
 
 static void flash_text() {
@@ -105,11 +114,15 @@ static void flash_text() {
 	flash_is_inverse = !flash_is_inverse;
 }
 
-static void file_status() {
-
+// filename is either: "No file", an ordinary file, or a checkpoint file
+static void file_status(const char *filename) {
 	static const char *device_names[MAX_DEVICES] = { "Tape:", "D1:", "D2:" };
+	display.statusf("%s%s", device_names[files.device()], filename);
+}
+
+static void file_status() {
 	const char *filename = files.filename();
-	display.statusf("%s%s", device_names[files.device()], filename? filename: "No file");
+	file_status(filename? filename: "No file");
 }
 
 static void reset(bool sd) {
@@ -120,7 +133,7 @@ static void reset(bool sd) {
 	switches.on_read_keyboard([]() { return input.read(); });
 	switches.on_strobe_keyboard([]() { input.strobe(); });
 
-	switches.on_access_page(screen_page_change);
+	switches.on_access_page(screen_page_and_mode_change);
 	switches.on_access_graphics_text(screen_mode_change);
 	switches.on_access_full_mixed(screen_mode_change);
 	switches.on_access_res(screen_mode_change);
@@ -161,6 +174,15 @@ static void function_key(uint8_t fn) {
 	case 5:
 		input.load();
 		return;
+	case 6:
+		file_status(files.checkpoint());
+		return;
+	case 7:
+		if (files.filename()) {
+			files.restore(files.filename());
+			after_restore();
+		}
+		break;
 	case 8:
 		files.next_device();
 		break;

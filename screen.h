@@ -21,9 +21,17 @@ public:
 
 	operator uint8_t() override { return _ram->get(_acc); }
 
-	void checkpoint(Checkpoint &) override { /* FIXME */ }
+	void checkpoint(Checkpoint &c) override {
+		_ram->checkpoint(c);
+		c.write(_top_active);
+		c.write(_btm_active);
+	}
 
-	void restore(Checkpoint &) override { /* FIXME */ }
+	void restore(Checkpoint &c) override {
+		_ram->restore(c);
+		c.read(_top_active);
+		c.read(_btm_active);
+	}
 
 protected:
 	Resolution(): Memory::Device(N) {}
@@ -47,6 +55,9 @@ public:
 
 	void redraw(uint8_t rowstart, uint8_t rowend, bool as_text);
 
+	void checkpoint(Checkpoint &c) override;
+
+	void restore(Checkpoint &c) override;
 private:
 	void on_page_change() override;
 
@@ -102,6 +113,7 @@ public:
 
 	void on_mode_change(uint8_t mode);
 
+	void redraw(uint8_t mode) { _mode = 0; on_mode_change(mode); }
 private:
 	uint8_t _mode;
 };
