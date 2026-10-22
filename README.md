@@ -47,7 +47,7 @@ $ make t=[esp8266 esp32 | rp2040] littlefs upload-littlefs
 
 Programs and disk-images in the uploaded filesystem (or SD card) are filtered by the device:
 
-- `Tape` reports only `.bas`, `.txt` and `.img` files:
+- `Tape` reports only `.bas`, `.int`, `.txt` and `.img` files:
   - `.bas`, `.int` and `.txt` files can be loaded using `F4`;
   - `.img` (checkpoint) files can be loaded using `F7` (restore from checkpoint).
 - `D1` and `D2` report only `.dsk`, `.po` and `.hdv` files:
