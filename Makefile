@@ -18,7 +18,7 @@ LIBRARIES += TFT_eSPI SpiRAM LittleFS
 endif
 
 ifeq ($t, esp32)
-LIBRARIES += FS ESP32Lib SD
+LIBRARIES += ESP32Lib FS SD
 
 ifeq ($b, lilygo)
 BOARD := ttgo-t7-v14-mini32
