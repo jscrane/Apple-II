@@ -50,3 +50,29 @@ void Screen::on_mode_change(uint8_t mode) {
 
 	_mode = mode;
 }
+
+// forced redraw on restore from checkpoint
+void Screen::redraw(uint8_t mode) {
+
+	bool text = (mode >> 3) & 1, mixed = (mode >> 2) & 1, hgr = mode & 1;
+	bool top_hgr = !text && hgr, btm_text = text || mixed;
+
+	hires.set_top_active(top_hgr);
+	lores.set_top_active(!top_hgr);
+	hires.set_btm_active(!btm_text && hgr);
+	lores.set_btm_active(btm_text);
+
+	if (text)
+		lores.redraw(0, SPLIT_LINE, true);
+	else if (hgr)
+		hires.redraw(0, SPLIT_LINE);
+	else
+		lores.redraw(0, SPLIT_LINE, false);
+
+	if (btm_text)
+		lores.redraw(SPLIT_LINE, SCREEN_LINES, true);
+	else if (hgr)
+		hires.redraw(SPLIT_LINE, SCREEN_LINES);
+	else
+		lores.redraw(SPLIT_LINE, SCREEN_LINES, false);
+}

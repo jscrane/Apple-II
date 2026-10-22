@@ -106,7 +106,7 @@ public:
 	Hires hires;
 
 	void on_mode_change(uint8_t mode);
-	void redraw(uint8_t mode) { _mode = 0; on_mode_change(mode); }
+	void redraw(uint8_t mode);
 
 private:
 	uint8_t _mode;
