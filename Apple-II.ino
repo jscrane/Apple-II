@@ -120,8 +120,6 @@ static void file_status(const char *filename) {
 	display.statusf("%s%s", device_names[files.device()], filename);
 }
 
-static const char *device_extensions[MAX_DEVICES] = { "bas;img;txt;int", "dsk;po;hdv", "dsk;po;hdv" };
-
 static void file_status() {
 	const char *filename = files.filename();
 	file_status(filename? filename: "No file");
@@ -162,6 +160,8 @@ static void reset(bool sd) {
 }
 
 static void function_key(uint8_t fn) {
+
+	static const char *device_extensions[MAX_DEVICES] = { "bas;img;txt;int", "dsk;po;hdv", "dsk;po;hdv" };
 
 	switch (fn) {
 	case 1:
