@@ -70,14 +70,14 @@ SmartPort::Switches smartport_switches(cpu, smartport);
 // Hires watches memory regions $2000 or $4000 depending on page
 // (because of mixed mode, additional guards are needed to prevent
 // drawing at the wrong time: see screen_mode_change)
-static void screen_page_change() {
+static void screen_page_change(bool page2) {
 
 	memory.put(lgr_page1, 0x0400);
 	memory.put(lgr_page2, 0x0800);
 	memory.put(hgr_page1, 0x2000);
 	memory.put(hgr_page2, 0x4000);
 
-	if (switches.is_page2()) {
+	if (page2) {
 		memory.put(screen.hires, 0x4000);
 		screen.hires.show_page(hgr_page2);
 		memory.put(screen.lores, 0x0800);
@@ -95,12 +95,12 @@ static void screen_mode_change() {
 }
 
 static void screen_page_and_mode_change() {
-	screen_page_change();
+	screen_page_change(switches.is_page2());
 	screen_mode_change();
 }
 
 static void after_restore() {
-	screen_page_change();
+	screen_page_change(switches.is_page2());
 	screen.redraw(switches.screen_mode());
 }
 
@@ -120,7 +120,7 @@ static void file_status(const char *filename) {
 	display.statusf("%s%s", device_names[files.device()], filename);
 }
 
-static const char *device_extensions[MAX_DEVICES] = { "bas;txt", "dsk;po;hdv", 0 };
+static const char *device_extensions[MAX_DEVICES] = { "bas;img;txt;int", "dsk;po;hdv", "dsk;po;hdv" };
 
 static void file_status() {
 	const char *filename = files.filename();
@@ -173,6 +173,9 @@ static void function_key(uint8_t fn) {
 	case 3:
 		files.rewind();
 		break;
+	case 4:
+		files.next_device();
+		break;
 	case 5:
 		input.load();
 		return;
@@ -184,9 +187,6 @@ static void function_key(uint8_t fn) {
 			files.restore(files.filename());
 			after_restore();
 		}
-		break;
-	case 8:
-		files.next_device();
 		break;
 	}
 	file_status();
