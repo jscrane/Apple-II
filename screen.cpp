@@ -75,4 +75,6 @@ void Screen::redraw(uint8_t mode) {
 		hires.redraw(SPLIT_LINE, SCREEN_LINES);
 	else
 		lores.redraw(SPLIT_LINE, SCREEN_LINES, false);
+
+	_mode = mode;
 }
