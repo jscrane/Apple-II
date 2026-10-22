@@ -60,3 +60,27 @@ void LanguageCard::Switches::any_access(uint8_t offset) {
 	}
 	_write_pending = (offset & 0x01);
 }
+
+void LanguageCard::checkpoint(Checkpoint &c) {
+
+	DBG_EMU("langcard: checkpoint: %d", c.pos());
+	c.write(_read_rom);
+	c.write(_can_write);
+	c.write(_current_bank == _bank1);
+	c.write(_main, sizeof(_main));
+	c.write(_bank1, sizeof(_bank1));
+	c.write(_bank2, sizeof(_bank2));
+}
+
+void LanguageCard::restore(Checkpoint &c) {
+
+	DBG_EMU("langcard: restore: %d", c.pos());
+	c.read(_read_rom);
+	c.read(_can_write);
+	bool bank1;
+	c.read(bank1);
+	select_bank(bank1);
+	c.read(_main, sizeof(_main));
+	c.read(_bank1, sizeof(_bank1));
+	c.read(_bank2, sizeof(_bank2));
+}

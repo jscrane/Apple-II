@@ -3,8 +3,8 @@ t ?= esp8266
 TERMINAL_SPEED := 115200
 #TERMINAL_EXTRA_FLAGS := -C serialout.txt
 CPPFLAGS = -Wall -O3 -DTERMINAL_SPEED=$(TERMINAL_SPEED)
-#CPPFLAGS += -DDEBUGGING=0x223
-LIBRARIES = PS2KeyAdvanced PS2KeyMap Adafruit_GFX Adafruit_BusIO Wire SPI
+#CPPFLAGS += -DDEBUGGING=0x233
+LIBRARIES = Adafruit_GFX Adafruit_BusIO Wire SPI
 
 ifeq ($t, esp8266)
 BOARD := d1_mini
@@ -18,13 +18,19 @@ LIBRARIES += TFT_eSPI SpiRAM LittleFS
 endif
 
 ifeq ($t, esp32)
-LIBRARIES += FS Network
+LIBRARIES += ESP32Lib FS SD
 
 ifeq ($b, lilygo)
 BOARD := ttgo-t7-v14-mini32
 SERIAL_PORT := /dev/ttyACM0
 CPPFLAGS += -DUSE_SD -DPS2_SERIAL_KBD=\"UK\"
-LIBRARIES += ESP32Lib SD
+LIBRARIES += PS2KeyAdvanced PS2KeyMap
+endif
+
+ifeq ($b, olimex)
+BOARD := esp32-sbc-fabgl
+SERIAL_PORT := /dev/ttyUSB0
+CPPFLAGS += -DUSE_SD -DUSE_HOST_KBD
 endif
 endif
 

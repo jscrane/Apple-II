@@ -155,3 +155,15 @@ void Hires::redraw(uint8_t rowstart, uint8_t rowend) {
 		_machine->yield();
 	}
 }
+
+void Hires::checkpoint(Checkpoint &c) {
+
+	DBG_EMU("hires: checkpoint %d", c.pos());
+	Base::checkpoint(c);
+}
+
+void Hires::restore(Checkpoint &c) {
+
+	DBG_EMU("hires: restore %d", c.pos());
+	Base::restore(c);
+}

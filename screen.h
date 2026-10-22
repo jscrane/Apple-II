@@ -21,6 +21,18 @@ public:
 
 	operator uint8_t() override { return _ram->get(_acc); }
 
+	void checkpoint(Checkpoint &c) override {
+		_ram->checkpoint(c);
+		c.write(_top_active);
+		c.write(_btm_active);
+	}
+
+	void restore(Checkpoint &c) override {
+		_ram->restore(c);
+		c.read(_top_active);
+		c.read(_btm_active);
+	}
+
 protected:
 	Resolution(): Memory::Device(N) {}
 
@@ -35,47 +47,45 @@ protected:
 
 class Lores: public Resolution<1024> {
 public:
-	using Resolution<1024>::operator=; // bring the base operator into scope to prevent hiding
+	using Base = Resolution<1024>;
+	using Base::operator=;
 
 	Lores(Display &display): _display(display) {}
-
 	void flash_text(bool flash_is_inverse);
-
 	void redraw(uint8_t rowstart, uint8_t rowend, bool as_text);
+
+	void checkpoint(Checkpoint &c) override;
+	void restore(Checkpoint &c) override;
 
 private:
 	void on_page_change() override;
-
 	void on_set(uint8_t) override;
 
 	void draw_text(uint8_t, uint8_t, uint8_t);
-
 	void draw_lores(uint8_t, uint8_t, uint8_t);
 
 	bool from_address(Memory::address a, uint8_t &row, uint8_t &col);
-
 	Memory::address to_address(uint8_t row);
 
 	uint32_t _flashrows;
-
 	Display &_display;
-
 	bool _top_text, _btm_text;
 };
 
 class Hires: public Resolution<8192> {
 public:
-	using Resolution<8192>::operator=; // bring the base operator into scope to prevent hiding
+	using Base = Resolution<8192>;
+	using Base::operator=;
 
 	Hires(Display &display): _display(display) {}
-
 	void redraw(uint8_t rowstart, uint8_t rowend);
+
+	void checkpoint(Checkpoint &c) override;
+	void restore(Checkpoint &c) override;
 
 private:
 	void on_set(uint8_t) override;
-
 	bool from_address(Memory::address a, uint16_t &x, uint16_t &y);
-
 	Memory::address to_address(uint16_t y);
 
 	// mono
@@ -93,10 +103,10 @@ public:
 	Screen(Display &display): lores(display), hires(display), _mode(0) {}
 
 	Lores lores;
-
 	Hires hires;
 
 	void on_mode_change(uint8_t mode);
+	void redraw(uint8_t mode);
 
 private:
 	uint8_t _mode;

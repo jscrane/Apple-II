@@ -146,3 +146,21 @@ void Lores::flash_text(bool flash_is_inverse) {
 				_flashrows &= ~bit;
 		}
 }
+
+void Lores::checkpoint(Checkpoint &c) {
+
+	DBG_EMU("lores: checkpoint: %d", c.pos());
+	Base::checkpoint(c);
+	c.write(_flashrows);
+	c.write(_top_text);
+	c.write(_btm_text);
+}
+
+void Lores::restore(Checkpoint &c) {
+
+	DBG_EMU("lores: restore: %d", c.pos());
+	Base::restore(c);
+	c.read(_flashrows);
+	c.read(_top_text);
+	c.read(_btm_text);
+}

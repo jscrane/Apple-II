@@ -7,12 +7,18 @@ public:
 	operator uint8_t() override;
 	void operator=(uint8_t) override;
 
+	void checkpoint(Checkpoint &) override;
+	void restore(Checkpoint &) override;
+
 	class Switches: public Memory::Device {
 	public:
 		Switches(LanguageCard &card): Memory::Device(16), _card(card), _write_pending(false) {}
 
 		operator uint8_t() override { any_access(_acc & 0x0f); return 0; }
 		void operator=(uint8_t) override { any_access(_acc & 0x0f); }
+
+		void checkpoint(Checkpoint & c) override { c.write(_write_pending); }
+		void restore(Checkpoint & c) override { c.read(_write_pending); }
 
 	private:
 		void any_access(uint8_t);
