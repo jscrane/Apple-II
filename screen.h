@@ -33,6 +33,8 @@ public:
 		c.read(_btm_active);
 	}
 
+	virtual void reset() { _top_active = _btm_active = false; }
+
 protected:
 	Resolution(): Memory::Device(N) {}
 
@@ -57,6 +59,12 @@ public:
 	void checkpoint(Checkpoint &c) override;
 	void restore(Checkpoint &c) override;
 
+	void reset() {
+		Base::reset();
+		_flashrows = 0;
+		_top_text = _btm_text = false;
+	}
+		
 private:
 	void on_page_change() override;
 	void on_set(uint8_t) override;
@@ -67,9 +75,9 @@ private:
 	bool from_address(Memory::address a, uint8_t &row, uint8_t &col);
 	Memory::address to_address(uint8_t row);
 
-	uint32_t _flashrows;
+	uint32_t _flashrows = 0;
+	bool _top_text = false, _btm_text = false;
 	Display &_display;
-	bool _top_text, _btm_text;
 };
 
 class Hires: public Resolution<8192> {
@@ -100,7 +108,7 @@ private:
 
 class Screen {
 public:
-	Screen(Display &display): lores(display), hires(display), _mode(0) {}
+	Screen(Display &display): lores(display), hires(display) {}
 
 	Lores lores;
 	Hires hires;
@@ -108,6 +116,12 @@ public:
 	void on_mode_change(uint8_t mode);
 	void redraw(uint8_t mode);
 
+	void reset() {
+		_mode = 0;
+		lores.reset();
+		hires.reset();
+	}
+
 private:
-	uint8_t _mode;
+	uint8_t _mode = 0;
 };

@@ -23,7 +23,7 @@ LIBRARIES += ESP32Lib FS SD
 ifeq ($b, lilygo)
 BOARD := ttgo-t7-v14-mini32
 SERIAL_PORT := /dev/ttyACM0
-CPPFLAGS += -DUSE_SD -DPS2_SERIAL_KBD=\"UK\"
+CPPFLAGS += -DUSE_SD -DPS2_KEYMAP=\"UK\"
 LIBRARIES += PS2KeyAdvanced PS2KeyMap
 endif
 

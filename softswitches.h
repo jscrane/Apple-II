@@ -3,7 +3,7 @@
 class SoftSwitches: public Memory::Device {
 public:
 	SoftSwitches(): Memory::Device(128) {}
-	void begin();
+	void reset() { text = mixed = page2 = hires = false; }
 
 	virtual void operator= (uint8_t) { toggle(); }
 	virtual operator uint8_t ();
@@ -66,5 +66,5 @@ private:
 	std::function<void(void)> graphics_text, full_mixed, page, res;
 	std::function<void(bool)> an0, an1, an2, an3;
 
-	bool text, mixed, page2, hires;
+	bool text = false, mixed = false, page2 = false, hires = false;
 };

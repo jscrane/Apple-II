@@ -1,6 +1,9 @@
 #include <r65emu.h>
 #include <r6502.h>
 #include <display.h>
+#include <flash_filer.h>
+#include <spiram.h>
+#include <debugging.h>
 
 #include "config.h"
 #include "screen.h"
@@ -44,19 +47,11 @@ LanguageCard::Switches lang_switches(language);
 Memory::address langaddr = 0xd000;
 #endif
 
-#if defined(USE_HOST_KBD)
-hw_serial_kbd kbd(Serial);
-#elif defined(USE_PS2_KBD)
-ps2_serial_kbd kbd;
-#else
-#error "No keyboard defined!"
-#endif
-
 Display display;
 Screen screen(display);
 SoftSwitches switches;
 Memory::Devices systemio;
-Input input(kbd, files);
+Input input(machine.console_keyboard(), files);
 
 DiskII disk(memory, drive1, drive2);
 DiskII::Switches disk_switches(cpu, disk);
@@ -129,18 +124,12 @@ static void reset(bool sd) {
 
 	input.reset();
 	disk.reset();
+	switches.reset();
+	screen.reset();
+	screen_page_and_mode_change();
 
-	switches.on_read_keyboard([]() { return input.read(); });
-	switches.on_strobe_keyboard([]() { input.strobe(); });
-
-	switches.on_access_page(screen_page_and_mode_change);
-	switches.on_access_graphics_text(screen_mode_change);
-	switches.on_access_full_mixed(screen_mode_change);
-	switches.on_access_res(screen_mode_change);
-
-	switches.on_access_speaker([]() { digitalWrite(PWM_SOUND, !digitalRead(PWM_SOUND)); });
-
-	machine.set_cpu_debugging(debug_never);
+	// this causes a cold-start
+	memory[0x3f4] = 0xff;		// power-up byte
 
 	if (!sd) {
 		DBG_EMU("No SD Card");
@@ -152,37 +141,36 @@ static void reset(bool sd) {
 #if defined(APPLE_II)
 		display.status("Ctrl-B: BASIC");
 #else
-		for (int i = DEFAULT_DEVICE; i--; )
-			files.next_device();
+		files.reset();
 		file_status();
 #endif
 	}
 }
 
-static void function_key(uint8_t fn) {
+static void function_key(uint16_t fn) {
 
 	static const char *device_extensions[MAX_DEVICES] = { "bas;img;txt;int", "dsk;po;hdv", "dsk;po;hdv" };
 
 	switch (fn) {
-	case 1:
+	case F1:
 		machine.reset();
 		return;
-	case 2:
+	case F2:
 		files.next_file(device_extensions[files.device()]);
 		break;
-	case 3:
+	case F3:
 		files.rewind();
 		break;
-	case 4:
+	case F4:
 		files.next_device();
 		break;
-	case 5:
+	case F5:
 		input.load();
 		return;
-	case 6:
+	case F6:
 		file_status(files.checkpoint());
 		return;
-	case 7:
+	case F7:
 		if (files.filename()) {
 			files.restore(files.filename());
 			after_restore();
@@ -225,9 +213,18 @@ void setup() {
 	memory.put(monitor, 0xf800);
 #endif
 
-	kbd.register_fnkey_handler(function_key);
+	switches.on_read_keyboard([]() { return input.read_kbd(); });
+	switches.on_strobe_keyboard([]() { input.strobe(); });
+	switches.on_access_page(screen_page_and_mode_change);
+	switches.on_access_graphics_text(screen_mode_change);
+	switches.on_access_full_mixed(screen_mode_change);
+	switches.on_access_res(screen_mode_change);
+	switches.on_access_speaker([]() { digitalWrite(PWM_SOUND, !digitalRead(PWM_SOUND)); });
+
+	input.register_fnkey_handler(function_key);
 	machine.interval_timer(FLASH_INTERVAL, flash_text);
 	machine.register_reset_handler(reset);
+	machine.set_cpu_debugging(debug_never);
 	machine.reset();
 }
 
