@@ -16,13 +16,13 @@ It does not:
 
 ## Keyboard
 
-- F1 (^N): reset
-- F2 (^O): advance to next file on current device
-- F3 (^P): rewind current device
-- F4 (^Q): select input device (`Tape`, `D1:`, `D2:`)
-- F5 (^R): load program from tape (by simulating typing it)
-- F6 (^S): checkpoint machine to file
-- F7 (^T): restore machine from selected checkpoint
+- F1: reset
+- F2: advance to next file on current device
+- F3: rewind current device
+- F4: select input device (`Tape`, `D1:`, `D2:`)
+- F5: load program from tape (by simulating typing it)
+- F6: checkpoint machine to file
+- F7: restore machine from selected checkpoint
 
 ## Tested Platforms
 
