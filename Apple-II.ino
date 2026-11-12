@@ -125,23 +125,23 @@ static void reset(bool sd) {
 	input.reset();
 	disk.reset();
 	switches.reset();
+
+#if defined(LANGUAGE_CARD)
+	language.reset();
+	lang_switches.reset();
+#endif
 	screen.reset();
 	screen_page_and_mode_change();
 
-	// this causes a cold-start
-	memory[0x3f4] = 0xff;		// power-up byte
+	files.reset();
 
 	if (!sd) {
 		DBG_EMU("No SD Card");
 		display.status("No SD Card");
-	} else if (!files.start()) {
-		DBG_EMU("Failed to open " PROGRAMS);
-		display.status("Failed to open " PROGRAMS);
 	} else {
 #if defined(APPLE_II)
 		display.status("Ctrl-B: BASIC");
 #else
-		files.reset();
 		file_status();
 #endif
 	}
@@ -184,6 +184,10 @@ inline Memory::address slot_address(uint8_t slot_id) { return 0xc000 + 0x100 * s
 
 inline uint8_t soft_switches_offset(uint8_t slot_id) { return 0x80 + slot_id * 0x10; }
 
+static void power_on() {
+	memory[0x3f4] = (memory[0x3f3] ^ 0xa5) ^ 0x01;   // invalid → monitor takes cold-start path
+}
+
 void setup() {
 
 	machine.begin();
@@ -195,6 +199,11 @@ void setup() {
 	display.begin(BG_COLOUR, FG_COLOUR, ORIENT);
 	display.setScreen(CHAR_WIDTH * CHARS_PER_LINE, CHAR_HEIGHT * SCREEN_LINES);
 	display.clear();
+
+	if (!files.start()) {
+		DBG_EMU("Failed to open " PROGRAMS);
+		display.status("Failed to open " PROGRAMS);
+	}
 
 	for (unsigned i = 0; i < 8; i++)
 		memory.put(sys[i], i * ram<>::page_size);
@@ -224,7 +233,8 @@ void setup() {
 	input.register_fnkey_handler(function_key);
 	machine.interval_timer(FLASH_INTERVAL, flash_text);
 	machine.register_reset_handler(reset);
-	machine.set_cpu_debugging(debug_never);
+
+	power_on();
 	machine.reset();
 }
 

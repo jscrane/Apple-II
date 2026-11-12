@@ -14,7 +14,7 @@ public:
 	void load() { _loading = true; }
 
 private:
-	uint8_t _lastc;
 	filer &_files;
-	bool _loading;
+	uint8_t _lastc = 0;
+	bool _loading = false;
 };
