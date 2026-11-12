@@ -59,6 +59,8 @@ public:
 	void checkpoint(Checkpoint &c) override;
 	void restore(Checkpoint &c) override;
 
+	// a stale flashing cursor after reset is expected:
+	// the monitor leaves the flash byte in text ram.
 	void reset() override {
 		Base::reset();
 		_flashrows = 0;
