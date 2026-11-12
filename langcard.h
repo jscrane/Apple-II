@@ -2,7 +2,12 @@
 
 class LanguageCard: public Memory::Device {
 public:
-	LanguageCard(): Memory::Device(12288), _read_rom(true), _current_bank(_bank2) {}
+	LanguageCard(): Memory::Device(12288), _current_bank(_bank2) {}
+	void reset() {
+		_read_rom = true;
+		_can_write = false;
+		_current_bank = _bank2;
+	}
 
 	operator uint8_t() override;
 	void operator=(uint8_t) override;
@@ -12,7 +17,8 @@ public:
 
 	class Switches: public Memory::Device {
 	public:
-		Switches(LanguageCard &card): Memory::Device(16), _card(card), _write_pending(false) {}
+		Switches(LanguageCard &card): Memory::Device(16), _card(card) {}
+		void reset() { _write_pending = false; }
 
 		operator uint8_t() override { any_access(_acc & 0x0f); return 0; }
 		void operator=(uint8_t) override { any_access(_acc & 0x0f); }
@@ -24,7 +30,7 @@ public:
 		void any_access(uint8_t);
 
 		LanguageCard &_card;
-		bool _write_pending;
+		bool _write_pending = false;
 	};
 
 private:

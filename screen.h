@@ -59,7 +59,7 @@ public:
 	void checkpoint(Checkpoint &c) override;
 	void restore(Checkpoint &c) override;
 
-	void reset() {
+	void reset() override {
 		Base::reset();
 		_flashrows = 0;
 		_top_text = _btm_text = false;

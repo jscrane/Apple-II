@@ -128,8 +128,10 @@ static void reset(bool sd) {
 	screen.reset();
 	screen_page_and_mode_change();
 
-	// this causes a cold-start
-	memory[0x3f4] = 0xff;		// power-up byte
+#if defined(LANGUAGE_CARD)
+	language.reset();
+	lang_switches.reset();
+#endif
 
 	if (!sd) {
 		DBG_EMU("No SD Card");
@@ -184,6 +186,10 @@ inline Memory::address slot_address(uint8_t slot_id) { return 0xc000 + 0x100 * s
 
 inline uint8_t soft_switches_offset(uint8_t slot_id) { return 0x80 + slot_id * 0x10; }
 
+static void power_on() {
+	memory[0x3f4] = (memory[0x3f3] ^ 0xa5) ^ 0x01;   // invalid → monitor takes cold-start path
+}
+
 void setup() {
 
 	machine.begin();
@@ -224,7 +230,8 @@ void setup() {
 	input.register_fnkey_handler(function_key);
 	machine.interval_timer(FLASH_INTERVAL, flash_text);
 	machine.register_reset_handler(reset);
-	machine.set_cpu_debugging(debug_never);
+
+	power_on();
 	machine.reset();
 }
 
