@@ -133,17 +133,15 @@ static void reset(bool sd) {
 	screen.reset();
 	screen_page_and_mode_change();
 
+	files.reset();
+
 	if (!sd) {
 		DBG_EMU("No SD Card");
 		display.status("No SD Card");
-	} else if (!files.start()) {
-		DBG_EMU("Failed to open " PROGRAMS);
-		display.status("Failed to open " PROGRAMS);
 	} else {
 #if defined(APPLE_II)
 		display.status("Ctrl-B: BASIC");
 #else
-		files.reset();
 		file_status();
 #endif
 	}
@@ -201,6 +199,11 @@ void setup() {
 	display.begin(BG_COLOUR, FG_COLOUR, ORIENT);
 	display.setScreen(CHAR_WIDTH * CHARS_PER_LINE, CHAR_HEIGHT * SCREEN_LINES);
 	display.clear();
+
+	if (!files.start()) {
+		DBG_EMU("Failed to open " PROGRAMS);
+		display.status("Failed to open " PROGRAMS);
+	}
 
 	for (unsigned i = 0; i < 8; i++)
 		memory.put(sys[i], i * ram<>::page_size);
