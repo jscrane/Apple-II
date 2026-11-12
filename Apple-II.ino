@@ -125,13 +125,13 @@ static void reset(bool sd) {
 	input.reset();
 	disk.reset();
 	switches.reset();
-	screen.reset();
-	screen_page_and_mode_change();
 
 #if defined(LANGUAGE_CARD)
 	language.reset();
 	lang_switches.reset();
 #endif
+	screen.reset();
+	screen_page_and_mode_change();
 
 	if (!sd) {
 		DBG_EMU("No SD Card");
