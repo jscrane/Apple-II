@@ -3,7 +3,6 @@
 #include <machine.h>
 #include <debugging.h>
 
-#include "serialio.h"
 #include "filer.h"
 #include "input.h"
 

@@ -17,20 +17,12 @@ It does not:
 ## Keyboard
 
 - F1: reset
-- F2: advance to next file on current device
-- F3: rewind current device
-- F4: select input device (`Tape`, `D1:`, `D2:`)
-- F5: load program from tape (by simulating typing it)
-- F6: checkpoint machine to file
-- F7: restore machine from selected checkpoint
-
-## Tested Platforms
-
-Please see [r65emu](https://github.com/jscrane/r65emu) for dependency information.
-
-- ESP8266 with ILI9341 TFT display, serial terminal and LittleFS (`esp8bit`).
-- [LilyGO TTGO](https://www.tinytronics.nl/shop/en/development-boards/microcontroller-boards/with-wi-fi/lilygo-ttgo-vga32-esp32) with VGA, PS/2 keyboard and SD card.
-- [Adafruit Feather](https://www.adafruit.com/product/4884) with DVI, serial terminal and LittleFS.
+- F2: select input device (`Tape`, `D1`, `D2`, `Checkpoint`)
+- F3: advance to next file on current device
+- F4: rewind current device
+- F6: load program from tape (by simulating typing it)
+- F7: checkpoint machine to file
+- F8: restore machine from selected checkpoint
 
 ## Programs
 
@@ -40,16 +32,26 @@ Disk images (`.dsk`) are from [here](https://mirrors.apple2.org.za/Apple%20II%20
 
 The filesystem can be uploaded using:
 ```sh
-$ make t=[esp8266 esp32 | rp2040] littlefs upload-littlefs
+$ make t=[esp8266 | esp32 | rp2040] littlefs upload-littlefs
 ```
 
 ### Filtering
 
-Programs and disk-images in the uploaded filesystem (or SD card) are filtered by the device:
+Programs and disk-images in the uploaded filesystem (or SD card) are filtered by device.
 
-- `Tape` reports only `.bas`, `.int`, `.txt` and `.img` files:
-  - `.bas`, `.int` and `.txt` files can be loaded using `F4`;
-  - `.img` (checkpoint) files can be loaded using `F7` (restore from checkpoint).
+Cycle through devices with `F2` and files on a device with `F3`.
+
+Four devices are configured:
+
+- `Tape` reports only `.bas`, `.int`, and `.txt` files, load them with `F6`.
 - `D1` and `D2` report only `.dsk`, `.po` and `.hdv` files:
-  - selecting an image-file using `F4` and `F2` is like inserting a disk in a drive,
-  - once "inserted", a disk image can be booted using `PR #6` (for `.dsk`) or `PR #7` (for `.po` or `.hdv`).
+  - once "inserted", a disk image can be booted using `PR #6` (for `.dsk`) or `PR #5` (for `.po` or `.hdv`).
+- `Checkpoint` reports only `.chk` files, load them with `F8`.
+
+## Tested Platforms
+
+Please see [r65emu](https://github.com/jscrane/r65emu) for dependency information.
+
+- ESP8266 with ILI9341 TFT display, serial terminal and LittleFS (`esp8bit`).
+- [LilyGO TTGO](https://www.tinytronics.nl/shop/en/development-boards/microcontroller-boards/with-wi-fi/lilygo-ttgo-vga32-esp32) with VGA, PS/2 keyboard and SD card.
+- [Adafruit Feather](https://www.adafruit.com/product/4884) with DVI, serial terminal and LittleFS.

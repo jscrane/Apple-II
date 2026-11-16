@@ -23,8 +23,12 @@ spiram::Block user(sram, 24576);
 #else
 ram<24576> user;
 #endif
-flash_filer files(PROGRAMS, MAX_DEVICES);
-flash_file drive1(1), drive2(2);
+
+flash_device tape("Tape", "bas;txt;int");
+flash_device drive1("D1", "dsk;po;hdv", readwrite);
+flash_device drive2("D2", "dsk;po;hdv", readwrite);
+flash_device chk("Checkpoint", flash_filer::CHK, readwrite);
+flash_filer files(PROGRAMS, tape, drive1, drive2, chk);
 
 #if defined(APPLE_II)
 #include "firmware/original_monitor.h"
@@ -111,8 +115,7 @@ static void flash_text() {
 
 // filename is either: "No file", an ordinary file, or a checkpoint file
 static void file_status(const char *filename) {
-	static const char *device_names[MAX_DEVICES] = { "Tape:", "D1:", "D2:" };
-	display.statusf("%s%s", device_names[files.device()], filename);
+	display.statusf("%s:%s", files.current().name(), filename);
 }
 
 static void file_status() {
@@ -150,30 +153,28 @@ static void reset(bool sd) {
 
 static void function_key(uint16_t fn) {
 
-	static const char *device_extensions[MAX_DEVICES] = { "bas;img;txt;int", "dsk;po;hdv", "dsk;po;hdv" };
-
 	switch (fn) {
 	case F1:
 		machine.reset();
 		return;
 	case F2:
-		files.next_file(device_extensions[files.device()]);
-		break;
-	case F3:
-		files.rewind();
-		break;
-	case F4:
 		files.next_device();
 		break;
-	case F5:
+	case F3:
+		files.advance();
+		break;
+	case F4:
+		files.rewind();
+		break;
+	case F6:
 		input.load();
 		return;
-	case F6:
+	case F7:
 		file_status(files.checkpoint());
 		return;
-	case F7:
-		if (files.filename()) {
-			files.restore(files.filename());
+	case F8:
+		if (chk.filename()) {
+			files.restore(chk.filename());
 			after_restore();
 		}
 		break;
