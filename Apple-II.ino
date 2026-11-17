@@ -55,7 +55,7 @@ Display display;
 Screen screen(display);
 SoftSwitches switches;
 Memory::Devices systemio;
-Input input(machine.console_keyboard(), files);
+Input input(machine.console_keyboard(), tape);
 
 DiskII disk(memory, drive1, drive2);
 DiskII::Switches disk_switches(cpu, disk);
@@ -164,15 +164,15 @@ static void function_key(uint16_t fn) {
 		files.advance();
 		break;
 	case F4:
+		input.load();
+		return;
+	case F5:
 		files.rewind();
 		break;
 	case F6:
-		input.load();
-		return;
-	case F7:
 		file_status(files.checkpoint());
 		return;
-	case F8:
+	case F7:
 		if (chk.filename()) {
 			files.restore(chk.filename());
 			after_restore();

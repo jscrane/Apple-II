@@ -3,7 +3,7 @@
 #include <machine.h>
 #include <debugging.h>
 
-#include "filer.h"
+#include "flash_filer.h"
 #include "input.h"
 
 void Input::reset() {
@@ -19,11 +19,11 @@ uint8_t Input::read_kbd() {
 
 	int c = -1;
 	if (!_loading)
-		c = read();
-	else if (!_files.more())
+		c = fnkey_kbd::read();
+	else if (!_tape.more())
 		_loading = false;
 	else
-		c = _files.read();
+		c = _tape.read();
 
 	if (c == -1)
 		return _lastc;		// nothing new

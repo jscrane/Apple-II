@@ -2,9 +2,11 @@
 
 #include <fnkey_kbd.h>
 
+class flash_file;
+
 class Input: private fnkey_kbd {
 public:
-	Input(keyboard &kbd, filer &files): fnkey_kbd(kbd), _files(files) {}
+	Input(keyboard &kbd, flash_file &tape): fnkey_kbd(kbd), _tape(tape) {}
 	using fnkey_kbd::register_fnkey_handler;
 
 	uint8_t read_kbd();
@@ -14,7 +16,7 @@ public:
 	void load() { _loading = true; }
 
 private:
-	filer &_files;
+	flash_file &_tape;
 	uint8_t _lastc = 0;
 	bool _loading = false;
 };

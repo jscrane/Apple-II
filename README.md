@@ -19,10 +19,10 @@ It does not:
 - F1: reset
 - F2: select input device (`Tape`, `D1`, `D2`, `Checkpoint`)
 - F3: advance to next file on current device
-- F4: rewind current device
-- F6: load program from tape (by simulating typing it)
-- F7: checkpoint machine to file
-- F8: restore machine from selected checkpoint
+- F4: load program from tape (by simulating typing it)
+- F5: rewind current device
+- F6: checkpoint machine to file
+- F7: restore machine from selected checkpoint
 
 ## Programs
 
@@ -43,10 +43,10 @@ Cycle through devices with `F2` and files on a device with `F3`.
 
 Four devices are configured:
 
-- `Tape` reports only `.bas`, `.int`, and `.txt` files, load them with `F6`.
+- `Tape` reports only `.bas`, `.int`, and `.txt` files, load them with `F5`.
 - `D1` and `D2` report only `.dsk`, `.po` and `.hdv` files:
   - once "inserted", a disk image can be booted using `PR #6` (for `.dsk`) or `PR #5` (for `.po` or `.hdv`).
-- `Checkpoint` reports only `.chk` files, load them with `F8`.
+- `Checkpoint` reports only `.chk` files, load them with `F7`.
 
 ## Tested Platforms
 

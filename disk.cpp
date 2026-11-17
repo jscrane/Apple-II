@@ -8,7 +8,6 @@
 #include <prom.h>
 #include <debugging.h>
 #include <serialio.h>
-#include <filer.h>
 #include <flash_filer.h>
 
 #include "config.h"
