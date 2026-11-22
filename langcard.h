@@ -23,8 +23,8 @@ public:
 		operator uint8_t() override { any_access(_acc & 0x0f); return 0; }
 		void operator=(uint8_t) override { any_access(_acc & 0x0f); }
 
-		void checkpoint(Checkpoint & c) override { c.write(_write_pending); }
-		void restore(Checkpoint & c) override { c.read(_write_pending); }
+		void checkpoint(Checkpoint &c) override { c.write(_write_pending); }
+		void restore(Checkpoint &c) override { c.read(_write_pending); }
 
 	private:
 		void any_access(uint8_t);

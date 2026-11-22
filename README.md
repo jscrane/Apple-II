@@ -16,12 +16,14 @@ It does not:
 
 ## Keyboard
 
-- F1: reset
+- F1: reset (warm start)
+- Ctrl-F1: reset (cold start)
 - F2: select input device (`Tape`, `D1`, `D2`, `Checkpoint`)
 - F3: advance to next file on current device
+- Ctrl-F3: rewind current device
 - F4: load program from tape (by simulating typing it)
-- F5: rewind current device
-- F6: checkpoint machine to file
+- F6: checkpoint machine to existing file
+- Shift-F6: checkpoint machine to new file
 - F7: restore machine from selected checkpoint
 
 ## Programs

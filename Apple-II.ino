@@ -4,6 +4,7 @@
 #include <flash_filer.h>
 #include <spiram.h>
 #include <debugging.h>
+#include <checkpoint_device.h>
 
 #include "config.h"
 #include "screen.h"
@@ -27,7 +28,7 @@ ram<24576> user;
 flash_device tape("Tape", "bas;txt;int");
 flash_device drive1("D1", "dsk;po;hdv", readwrite);
 flash_device drive2("D2", "dsk;po;hdv", readwrite);
-flash_device chk("Checkpoint", flash_filer::CHK, readwrite);
+checkpoint_device chk("Checkpoint");
 flash_filer files(PROGRAMS, tape, drive1, drive2, chk);
 
 #if defined(APPLE_II)
@@ -123,7 +124,16 @@ static void file_status() {
 	file_status(filename? filename: "No file");
 }
 
+static bool cold_start = true;
+
+static void power_on() {
+	memory[0x3f4] = (memory[0x3f3] ^ 0xa5) ^ 0x01;   // invalid → monitor takes cold-start path
+}
+
 static void reset(bool sd) {
+
+	if (cold_start)
+		power_on();
 
 	input.reset();
 	disk.reset();
@@ -155,6 +165,8 @@ static void function_key(uint16_t fn) {
 
 	switch (fn) {
 	case F1:
+	case F1 | keys::MOD_CTRL:
+		cold_start = fn & keys::MOD_CTRL;
 		machine.reset();
 		return;
 	case F2:
@@ -163,19 +175,27 @@ static void function_key(uint16_t fn) {
 	case F3:
 		files.advance();
 		break;
+	case F3 | keys::MOD_CTRL:
+		files.rewind();
+		break;
 	case F4:
 		input.load();
 		return;
-	case F5:
-		files.rewind();
-		break;
 	case F6:
-		file_status(files.checkpoint());
-		return;
+	case F6 | keys::MOD_SHIFT:
+		if (!chk.save(fn & keys::MOD_SHIFT)) {
+			display.status("Checkpoint failed");
+			return;
+		}
+		break;
 	case F7:
 		if (chk.filename()) {
-			files.restore(chk.filename());
-			after_restore();
+			if (chk.restore())
+				after_restore();
+			else {
+				display.status("Restore failed");
+				return;
+			}
 		}
 		break;
 	}
@@ -185,10 +205,6 @@ static void function_key(uint16_t fn) {
 inline Memory::address slot_address(uint8_t slot_id) { return 0xc000 + 0x100 * slot_id; }
 
 inline uint8_t soft_switches_offset(uint8_t slot_id) { return 0x80 + slot_id * 0x10; }
-
-static void power_on() {
-	memory[0x3f4] = (memory[0x3f3] ^ 0xa5) ^ 0x01;   // invalid → monitor takes cold-start path
-}
 
 void setup() {
 
@@ -231,7 +247,6 @@ void setup() {
 	machine.interval_timer(FLASH_INTERVAL, flash_text);
 	machine.register_reset_handler(reset);
 
-	power_on();
 	machine.reset();
 }
 
